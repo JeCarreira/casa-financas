@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     if (!key || key.length < 4) return res.status(400).json({ error: 'Invalid key' });
 
     const safeKey = 'cf:' + key.replace(/[^a-z0-9\-]/g, '').slice(0, 60);
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const url = process.env.KV_REST_API_URL;
+    const token = process.env.KV_REST_API_TOKEN;
 
     const response = await fetch(`${url}/set/${encodeURIComponent(safeKey)}`, {
       method: 'POST',
