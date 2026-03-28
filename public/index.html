@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Casa &amp; Finanças</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1C1A17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Karla:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-brand">casa<span>&</span>finanças</div>
+    <p class="login-sub">Entra com o código da tua família para aceder em qualquer dispositivo.</p>
+    <div class="card">
+      <div class="fg" style="margin-bottom:.8rem;"><label>Código de família</label><input id="login-code" placeholder="ex: familia-silva-2026" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <p style="font-size:12px;color:var(--t3);margin-bottom:.9rem;">Este código é a tua "conta". Usa sempre o mesmo em todos os dispositivos. Guarda-o bem!</p>
+      <button class="btn ba" style="width:100%;" onclick="doLogin()">Entrar</button>
+      <div id="login-err" style="font-size:12px;color:var(--red);margin-top:.5rem;text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<nav>
+  <div class="brand">casa<span>&</span>finanças</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="tabs" id="main-tabs">
+      <button class="tab on" onclick="go('resumo')">Resumo</button>
+      <button class="tab" onclick="go('entradas')">Entradas</button>
+      <button class="tab" onclick="go('despesas')">Despesas</button>
+      <button class="tab" onclick="go('diario')">Diário</button>
+      <button class="tab" onclick="go('objetivos')">Objetivos</button>
+      <button class="tab" onclick="go('desafios')">Desafios</button>
+      <button class="tab" onclick="go('desejos')">Desejos</button>
+      <button class="tab" onclick="go('dicas')">Dicas</button>
+    </div>
+    <div class="sync-ind"><div class="dot" id="sync-dot"></div><span id="sync-lbl">guardado</span></div>
+  </div>
+</nav>
+
+<!-- ===== RESUMO ===== -->
+<div class="page on" id="page-resumo">
+  <div class="page-hdr">
+    <h1>Resumo</h1>
+    <select id="r-month" onchange="renderResumo()" style="width:auto;font-size:13px;padding:6px 10px;"></select>
+  </div>
+  <p class="sub">Visão completa e actualizada das finanças da família.</p>
+  <div id="r-countdown"></div>
+  <div id="r-alerts"></div>
+  <div class="metrics" id="r-metrics"></div>
+  <div class="card"><div class="ct">Barra de gastos</div><div id="r-spendbar"></div></div>
+  <div class="card"><div class="ct">Entradas do mês</div><div id="r-entradas"></div></div>
+  <div class="card"><div class="ct">Despesas por categoria</div><div id="r-cats"></div></div>
+  <div class="card"><div class="ct">Últimos registos diários</div><div id="r-daily"></div></div>
+  <div class="card"><div class="ct">Progresso dos objetivos</div><div id="r-objs"></div></div>
+  <div class="card" style="border-color:#e8c08a;"><div class="ct">📌 Notas para o próximo mês</div><div id="r-notas-wrap"></div></div>
+  <div class="card"><div class="ct">Lista de desejos — o que já é possível</div><div id="r-wishes"></div></div>
+</div>
+
+<!-- ===== ENTRADAS ===== -->
+<div class="page" id="page-entradas">
+  <div class="page-hdr">
+    <h1>Entradas</h1>
+    <select id="e-month" onchange="renderEntradas()" style="width:auto;font-size:13px;padding:6px 10px;"></select>
+  </div>
+  <p class="sub">Salário, CAF e entradas previstas em separado.</p>
+  <div class="card">
+    <div class="ct" style="color:var(--cat-habitacao);">Salário Luis</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="sl-d" value="Salário Luis"></div><div class="fg"><label>Valor (€)</label><input id="sl-v" type="number" placeholder="2400"></div><div class="fg"><label>Data</label><input id="sl-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addEnt('salario')">+ Adicionar</button></div></div>
+    <div id="lst-salario"></div>
+  </div>
+  <div class="card">
+    <div class="ct" style="color:var(--blue);">CAF</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="caf-d" value="CAF"></div><div class="fg"><label>Valor (€)</label><input id="caf-v" type="number" placeholder="0"></div><div class="fg"><label>Data</label><input id="caf-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addEnt('caf')">+ Adicionar</button></div></div>
+    <div id="lst-caf"></div>
+  </div>
+  <div class="card" style="border-color:var(--purple);border-style:dashed;">
+    <div class="ct" style="color:var(--purple-t);">Entradas previstas — não contam no saldo real</div>
+    <div class="alert alp" style="margin-bottom:.7rem;">Regista aqui o que esperas receber mas ainda não chegou. Quando chegar, apaga e adiciona no Salário ou CAF.</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="pv-d" placeholder="ex: Participação, bónus..."></div><div class="fg"><label>Valor previsto (€)</label><input id="pv-v" type="number" placeholder="0"></div><div class="fg"><label>Data prevista</label><input id="pv-dt" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Notas</label><input id="pv-n" placeholder="ex: Pode variar..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addEnt('prevista')">+ Adicionar</button></div></div>
+    <div id="lst-prevista"></div>
+    <div id="pv-sugestao"></div>
+  </div>
+</div>
+
+<!-- ===== DESPESAS ===== -->
+<div class="page" id="page-despesas">
+  <div class="page-hdr">
+    <h1>Despesas</h1>
+    <select id="d-month" onchange="renderDesp()" style="width:auto;font-size:13px;padding:6px 10px;"></select>
+  </div>
+  <p class="sub">Despesas fixas mensais e despesas pontuais.</p>
+  <div class="card">
+    <div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas fixas mensais</div><div style="display:flex;gap:6px;"><button class="btn bg bsm" onclick="openM('m-addtpl')">+ Rubrica</button><button class="btn ba bsm" onclick="aplicarTpl()">Aplicar ao mês</button></div></div>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Marca as que se aplicam este mês, ajusta valores se preciso, e carrega "Aplicar ao mês".</p>
+    <div id="tpl-list"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Despesa pontual <span style="font-size:11px;font-weight:400;color:var(--t3);">— algo que só acontece uma vez ou de vez em quando (farmácia, roupa, avaria...)</span></div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Farmácia, roupa, avaria..."></div><div class="fg"><label>Valor (€)</label><input id="da-v" type="number" placeholder="0"></div></div>
+    <div class="fr"><div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="da-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
+  </div>
+  <div class="card">
+    <div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas do mês</div><span id="d-total-pill" class="pill pr">0 €</span></div>
+    <div id="lst-despesas"></div>
+  </div>
+</div>
+
+<!-- ===== DIÁRIO ===== -->
+<div class="page" id="page-diario">
+  <h1>Diário de Gastos</h1>
+  <p class="sub">Os pequenos gastos do dia a dia — são estes que fazem moça!</p>
+  <div id="diar-alerts"></div>
+  <div class="card">
+    <div class="ct">Registo rápido</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>O que foi?</label><input id="dr-d" placeholder="ex: Café, gasolina, supermercado..."></div><div class="fg"><label>Valor (€)</label><input id="dr-v" type="number" placeholder="0"></div></div>
+    <div class="fr"><div class="fg"><label>Categoria</label><select id="dr-c"><option>Alimentação</option><option>Café / Bar</option><option>Gasolina</option><option>Transportes</option><option>Farmácia</option><option>Compras</option><option>Lazer</option><option>Criança</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="dr-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDiar()">+ Registar</button></div></div>
+  </div>
+  <div class="card"><div class="shdr"><div class="ct" style="margin-bottom:0;">Histórico</div><span class="pill pr" id="dr-total-pill">0 €</span></div><div id="lst-diario"></div></div>
+</div>
+
+<!-- ===== OBJETIVOS ===== -->
+<div class="page" id="page-objetivos">
+  <h1>Objetivos</h1>
+  <p class="sub">Metas financeiras — actualiza quando quiseres.</p>
+  <div class="card">
+    <div class="ct">Novo objetivo</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Nome</label><input id="o-nome" placeholder="ex: Férias, reserva emergência..."></div><div class="fg"><label>Meta (€)</label><input id="o-meta" type="number" placeholder="2000"></div></div>
+    <div class="fr"><div class="fg"><label>Prazo</label><input id="o-prazo" type="date"></div><div class="fg"><label>Já poupado (€)</label><input id="o-atual" type="number" placeholder="0"></div><div class="fg"><label>Mensal (€)</label><input id="o-mensal" type="number" placeholder="150"></div></div>
+    <div class="fr"><div class="fg"><label>Notas</label><input id="o-notas" placeholder="detalhes..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addObj()">+ Guardar</button></div></div>
+  </div>
+  <div id="lst-objetivos"></div>
+</div>
+
+<!-- ===== DESAFIOS ===== -->
+<div class="page" id="page-desafios">
+  <h1>Desafios</h1>
+  <p class="sub">Pequenos desafios para construir bons hábitos financeiros e poupar mais.</p>
+  <div class="card">
+    <div class="ct">Criar desafio personalizado</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Nome do desafio</label><input id="ch-nome" placeholder="ex: Sem compras supérfluas em março"></div><div class="fg"><label>Meta (€)</label><input id="ch-meta" type="number" placeholder="200"></div></div>
+    <div class="fr"><div class="fg"><label>Tipo</label><select id="ch-tipo"><option value="poupanca">Poupar X € em X meses</option><option value="semanas">X semanas sem compras</option><option value="diario">Poupar X € por dia</option><option value="livre">Desafio livre</option></select></div><div class="fg"><label>Duração (semanas)</label><input id="ch-dur" type="number" placeholder="4" min="1"></div><div class="fg"><label>Data início</label><input id="ch-ini" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Descrição</label><input id="ch-desc" placeholder="Detalha o desafio..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesafio()">+ Criar</button></div></div>
+  </div>
+  <div class="card" style="background:var(--surface2);border-style:dashed;">
+    <div class="ct">Desafios sugeridos — carrega para adoptar</div>
+    <div id="desafios-sugeridos"></div>
+  </div>
+  <div id="lst-desafios"></div>
+</div>
+
+<!-- ===== DESEJOS ===== -->
+<div class="page" id="page-desejos">
+  <h1>Lista de Desejos</h1>
+  <p class="sub">O que gostavas de comprar — digo-te quando faz sentido avançar.</p>
+  <div class="card">
+    <div class="ct">Adicionar item</div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>O que é?</label><input id="w-nome" placeholder="ex: Sofá, ténis, mochila..."></div><div class="fg"><label>Preço (€)</label><input id="w-preco" type="number" placeholder="0"></div></div>
+    <div class="fr"><div class="fg"><label>Prioridade</label><select id="w-prio"><option value="alta">Alta — quero mesmo</option><option value="media" selected>Média — quando der</option><option value="baixa">Baixa — um dia</option></select></div><div class="fg"><label>Notas</label><input id="w-notas" placeholder="onde comprar, porquê..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addWish()">+ Adicionar</button></div></div>
+  </div>
+  <div id="wishes-ai"></div>
+  <div id="lst-desejos"></div>
+</div>
+
+<!-- ===== DICAS ===== -->
+<div class="page" id="page-dicas">
+  <h1>Dicas &amp; Ideias</h1>
+  <p class="sub">Formas de organizar as finanças, poupar mais e viver melhor com o que tens.</p>
+  <div id="dicas-content"></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- MODAIS -->
+<div class="modal-overlay" id="m-addtpl"><div class="modal"><h2>Nova despesa fixa</h2><div class="fr"><div class="fg"><label>Descrição</label><input id="tpl-n" placeholder="ex: Renda, Internet..."></div></div><div class="fr"><div class="fg"><label>Valor (€)</label><input id="tpl-v" type="number" placeholder="0"></div><div class="fg"><label>Categoria</label><select id="tpl-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Outro</option></select></div></div><div class="mf"><button class="btn bg" onclick="closeM('m-addtpl')">Cancelar</button><button class="btn ba" onclick="addTpl()">Guardar</button></div></div></div>
+
+<div class="modal-overlay" id="m-obj-edit"><div class="modal"><h2 id="me-title">Actualizar objetivo</h2><div id="me-body"></div><div class="mf"><button class="btn bg" onclick="closeM('m-obj-edit')">Fechar</button></div></div></div>
+
+<div class="modal-overlay" id="m-ai"><div class="modal"><h2 id="mai-title">Análise</h2><div id="mai-body"></div><div class="mf"><button class="btn bg" onclick="closeM('m-ai')">Fechar</button></div></div></div>
+
+<div class="modal-overlay" id="m-nota"><div class="modal"><h2>Nota para o próximo mês</h2><div class="fr"><div class="fg"><label>Nota / lembrete</label><input id="nota-txt" placeholder="ex: Não esquecer seguro do carro em maio..."></div></div><div class="mf"><button class="btn bg" onclick="closeM('m-nota')">Cancelar</button><button class="btn ba" onclick="saveNota()">Guardar nota</button></div></div></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
