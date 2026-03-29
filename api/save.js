@@ -1,32 +1,31 @@
-// api/save.js
+export const config = { api: { bodyParser: true } };
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { key, data } = req.body;
-    if (!key || key.length < 4) return res.status(400).json({ error: 'Invalid key' });
+    const { key, data } = req.body || {};
+    if (!key) return res.status(400).json({ error: 'No key' });
 
-    const safeKey = 'cf_' + key.replace(/[^a-z0-9\-]/g, '').slice(0, 60);
+    const safeKey = key.replace(/[^a-z0-9\-]/g, '').slice(0, 60);
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
 
-    if (!url || !token) {
-      return res.status(500).json({ error: 'Server config error - missing env vars' });
-    }
+    if (!url || !token) return res.status(500).json({ error: 'Missing env: ' + JSON.stringify({ url: !!url, token: !!token }) });
 
-    const value = encodeURIComponent(JSON.stringify(data));
-    const response = await fetch(`${url}/set/${safeKey}/${value}?ex=31536000`, {
+    const value = JSON.stringify(data);
+    const r = await fetch(`${url}/set/cf_${safeKey}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([value, 'EX', '31536000']),
     });
 
-    const result = await response.json();
-    return res.status(200).json({ ok: true, result });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const txt = await r.text();
+    return res.status(200).json({ ok: true, status: r.status, body: txt });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
   }
 }
