@@ -1,8 +1,5 @@
 {
   "name": "casa-financas",
   "version": "1.0.0",
-  "description": "Gestão financeira familiar",
-  "dependencies": {
-    "@vercel/kv": "^1.0.0"
-  }
+  "engines": { "node": "20.x" }
 }
