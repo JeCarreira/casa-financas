@@ -1,5 +1,3 @@
-export const config = { api: { bodyParser: true } };
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -7,24 +5,21 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { key, data } = req.body || {};
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { key, data } = body || {};
     if (!key) return res.status(400).json({ error: 'No key' });
-
-    const safeKey = key.replace(/[^a-z0-9\-]/g, '').slice(0, 60);
+    const safeKey = 'cf_' + String(key).replace(/[^a-z0-9\-]/g, '').slice(0, 60);
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
-
-    if (!url || !token) return res.status(500).json({ error: 'Missing env: ' + JSON.stringify({ url: !!url, token: !!token }) });
-
+    if (!url || !token) return res.status(500).json({ error: 'Missing env vars' });
     const value = JSON.stringify(data);
-    const r = await fetch(`${url}/set/cf_${safeKey}`, {
+    const r = await fetch(`${url}/set/${safeKey}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify([value, 'EX', '31536000']),
+      body: JSON.stringify([value, 'EX', 31536000]),
     });
-
-    const txt = await r.text();
-    return res.status(200).json({ ok: true, status: r.status, body: txt });
+    if (!r.ok) { const t = await r.text(); return res.status(500).json({ error: 'Redis err: ' + t }); }
+    return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
