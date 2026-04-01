@@ -39,7 +39,7 @@
     <button class="nav-item" data-page="desafios" onclick="go('desafios')">Desafios</button>
     <button class="nav-item" data-page="desejos" onclick="go('desejos')">Desejos</button>
     <button class="nav-item" data-page="mentor" onclick="go('mentor')">Mentor IA</button>
-    <button class="nav-item" data-page="investimentos" onclick="go('investimentos')">Investimentos</button>
+    <button class="nav-item" data-page="investir" onclick="go('investir')">Investimentos</button>
     <button class="nav-item" data-page="dicas" onclick="go('dicas')">Dicas</button>
   </div>
   <div class="sync-ind"><div class="dot" id="sync-dot"></div><span id="sync-lbl">guardado</span></div>
@@ -65,7 +65,7 @@
   <button class="nav-item-m" data-page="desafios" onclick="go('desafios')">🏆 Desafios</button>
   <button class="nav-item-m" data-page="desejos" onclick="go('desejos')">🛍 Lista de desejos</button>
   <button class="nav-item-m" data-page="mentor" onclick="go('mentor')">🤖 Mentor IA</button>
-  <button class="nav-item-m" data-page="investimentos" onclick="go('investimentos')">📈 Investimentos</button>
+  <button class="nav-item-m" data-page="investir" onclick="go('investir')">📈 Investimentos</button>
   <button class="nav-item-m" data-page="dicas" onclick="go('dicas')">💡 Dicas</button>
 </div>
 
@@ -140,14 +140,15 @@
 <div class="page" id="page-mentor">
   <h1>Mentor IA</h1>
   <p class="sub">O teu guia financeiro pessoal — faz perguntas, pede conselhos, recebe orientação.</p>
-  <div id="mentor-content"></div>
+  <div class="card" id="mentor-chat-wrap" style="min-height:300px;max-height:55vh;overflow-y:auto;padding:1rem;"><div id="mentor-msgs"></div></div>
+  <div class="card" style="margin-top:.5rem;"><div class="fr" style="align-items:flex-end;"><div class="fg"><textarea id="mentor-input" placeholder="Pergunta-me qualquer coisa sobre as tuas finanças..." style="min-height:60px;resize:none;"></textarea></div><button class="btn ba" onclick="sendMentor()" style="align-self:flex-end;">Enviar</button></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:.5rem;" id="mentor-sugs"></div></div>
 </div>
 
 <!-- INVESTIMENTOS -->
-<div class="page" id="page-investimentos">
+<div class="page" id="page-investir">
   <h1>Investimentos</h1>
   <p class="sub">Aprende a fazer o teu dinheiro trabalhar — explicado para quem começa do zero.</p>
-  <div id="invest-content"></div>
+  <div id="investir-content"></div>
 </div>
 
 <!-- DICAS -->
