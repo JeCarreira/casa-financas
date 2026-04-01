@@ -41,6 +41,8 @@
     <button class="nav-item" data-page="mentor" onclick="go('mentor')">Mentor IA</button>
     <button class="nav-item" data-page="investir" onclick="go('investir')">Investimentos</button>
     <button class="nav-item" data-page="dicas" onclick="go('dicas')">Dicas</button>
+    <button class="nav-item" data-page="boca" onclick="go('boca')">Casa Boca</button>
+    <button class="nav-item" data-page="renda" onclick="go('renda')">Renda</button>
   </div>
   <div class="sync-ind"><div class="dot" id="sync-dot"></div><span id="sync-lbl">guardado</span></div>
 </nav>
@@ -158,6 +160,33 @@
   <div id="dicas-content"></div>
 </div>
 
+
+<!-- BOCA (casa que estão a pagar) -->
+<div class="page" id="page-boca">
+  <h1>Casa da Boca</h1>
+  <p class="sub">Registo dos pagamentos mensais da casa — a tua casa própria em construção.</p>
+  <div class="card">
+    <div class="ct">Registar pagamento</div>
+    <div class="fr"><div class="fg"><label>Mês / Ano</label><input id="boca-mes" type="month"></div><div class="fg"><label>Valor pago (€)</label><input id="boca-val" type="number" placeholder="0" step="0.01"></div><div class="fg"><label>Pago?</label><select id="boca-pago"><option value="sim">Sim — pago</option><option value="nao">Não pago</option><option value="parcial">Parcial</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Notas</label><input id="boca-nota" placeholder="ex: Pago a mais, atraso..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addBoca()">+ Registar</button></div></div>
+  </div>
+  <div class="card" id="boca-resumo-card"></div>
+  <div class="card"><div class="ct">Histórico de pagamentos</div><div id="lst-boca"></div></div>
+</div>
+
+<!-- RENDA (casa alugada) -->
+<div class="page" id="page-renda">
+  <h1>Renda da Casa</h1>
+  <p class="sub">Controlo da renda que recebes — o que foi pago, o que ficou em falta.</p>
+  <div class="card">
+    <div class="ct">Registar renda</div>
+    <div class="fr"><div class="fg"><label>Mês / Ano</label><input id="renda-mes" type="month"></div><div class="fg"><label>Valor esperado (€)</label><input id="renda-esp" type="number" placeholder="0" step="0.01"></div><div class="fg"><label>Valor recebido (€)</label><input id="renda-rec" type="number" placeholder="0" step="0.01"></div></div>
+    <div class="fr"><div class="fg"><label>Pago?</label><select id="renda-pago"><option value="sim">Sim — pago completo</option><option value="parcial">Parcial — pagou menos</option><option value="nao">Não pago</option></select></div><div class="fg"><label>Notas</label><input id="renda-nota" placeholder="ex: Pagou menos, atrasou..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addRenda()">+ Registar</button></div></div>
+  </div>
+  <div class="card" id="renda-resumo-card"></div>
+  <div class="card"><div class="ct">Histórico de rendas</div><div id="lst-renda"></div></div>
+</div>
+
 </div>
 
 <!-- MODAIS -->
@@ -167,3 +196,4 @@
 <script src="/app.js"></script>
 </body>
 </html>
+
