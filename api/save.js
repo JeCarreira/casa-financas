@@ -5,22 +5,26 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { key, data } = body || {};
+    const { key, data } = req.body || {};
     if (!key) return res.status(400).json({ error: 'No key' });
-    const safeKey = 'cf_' + String(key).replace(/[^a-z0-9\-]/g, '').slice(0, 60);
+    const safeKey = 'cf_' + String(key).replace(/[^a-z0-9]/g, '').slice(0, 50);
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
-    if (!url || !token) return res.status(500).json({ error: 'Missing env vars' });
+    if (!url || !token) return res.status(500).json({ error: 'Missing env: url=' + !!url + ' token=' + !!token });
     const value = JSON.stringify(data);
-    const r = await fetch(`${url}/set/${safeKey}`, {
+    // Upstash REST: pipeline with SET + EXPIRE
+    const r = await fetch(url + '/pipeline', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify([value, 'EX', 31536000]),
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        ['SET', safeKey, value],
+        ['EXPIRE', safeKey, 31536000]
+      ])
     });
-    if (!r.ok) { const t = await r.text(); return res.status(500).json({ error: 'Redis err: ' + t }); }
+    const txt = await r.text();
+    if (!r.ok) return res.status(500).json({ error: 'Redis ' + r.status + ': ' + txt });
     return res.status(200).json({ ok: true });
-  } catch (e) {
+  } catch(e) {
     return res.status(500).json({ error: e.message });
   }
 }
