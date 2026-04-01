@@ -332,10 +332,10 @@ function sendMentor(){
   var systemPrompt='És um mentor financeiro pessoal e de confiança para uma família portuguesa de 4 pessoas (2 adultos, 2 crianças). A pessoa tem 32 anos, objectivo de ter casa própria e criar património até aos 40 anos. Problema principal: compras impulsivas e não conseguir poupar. Perfil de risco: muito baixo, não quer perder dinheiro.\n\nDados actuais deste mês:\n- Entradas: '+fmt(tIn)+'\n- Despesas fixas: '+fmt(tD)+'\n- Gastos diários: '+fmt(tDi)+'\n- Saldo actual: '+fmt(saldo)+'\n- Dias para o dia 5: '+ci.daysLeft+'\n- Objetivos: '+objsStr+'\n- Notas próximo mês: '+notasStr+'\n\nResponde em português de Portugal. Sê directo, caloroso e prático. Não uses bullet points em excesso. Máximo 150 palavras. Faz UMA pergunta de acompanhamento no final para manter o diálogo e ajudar a pessoa a progredir.';
   MENTOR_HISTORY.push({role:'user',content:userMsg});
   var messages=MENTOR_HISTORY.slice(-8);// keep last 8 exchanges
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt,messages:messages})})
+  fetch(API+'/mentor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messages,systemPrompt:systemPrompt})})
     .then(function(r){return r.json();})
     .then(function(data){
-      var txt=data.content&&data.content[0]?data.content[0].text:'Não consegui responder. Tenta novamente.';
+      var txt=data.text||'Não consegui responder. Tenta novamente.';
       MENTOR_HISTORY.push({role:'assistant',content:txt});
       var thinking=g('mentor-thinking');if(thinking)thinking.remove();
       msgs.innerHTML+='<div style="background:var(--amber-bg);border:1px solid #e8c08a;border-radius:2px 10px 10px 10px;padding:10px 14px;font-size:13px;margin-bottom:8px;max-width:90%;line-height:1.6;">'+txt.replace(/\n/g,'<br>')+'</div>';
@@ -343,7 +343,7 @@ function sendMentor(){
     })
     .catch(function(){
       var thinking=g('mentor-thinking');if(thinking)thinking.remove();
-      msgs.innerHTML+='<div style="color:var(--red-t);font-size:13px;padding:8px 0;">Erro ao ligar ao mentor. Verifica a ligação.</div>';
+      msgs.innerHTML+='<div style="color:var(--red-t);font-size:13px;padding:8px 0;">Erro ao ligar ao mentor. Tenta novamente.</div>';
     });
 }
 // Enter to send in mentor
@@ -439,3 +439,98 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden&&USE
 function openM(id){g(id).classList.add('on');}
 function closeM(id){g(id).classList.remove('on');}
 function allMonths(){var s=new Set(),n=new Date();for(var i=5;i>=0;i--){var d=new Date(n.getFullYear(),n.getMonth()-i,1);s.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}[...entradas,...despesas,...diario].forEach(function(x){if(x.data)s.add(mk(x.data));});return[...s].sort();}
+
+// ===== BOCA (casa que estão a pagar) =====
+var bocaData=[];
+function bocaKey(){return LS_KEY+'_boca';}
+function bocaSave(){try{localStorage.setItem(bocaKey(),JSON.stringify(bocaData));}catch(e){}saveAll();}
+function bocaLoad(){try{var r=localStorage.getItem(bocaKey());if(r)bocaData=JSON.parse(r);}catch(e){}}
+
+function addBoca(){
+  var mes=g('boca-mes').value,val=parseFloat(g('boca-val').value)||0,pago=g('boca-pago').value,nota=g('boca-nota').value.trim();
+  if(!mes){alert('Selecciona o mês.');return;}
+  // Remove se já existe esse mês
+  bocaData=bocaData.filter(function(b){return b.mes!==mes;});
+  bocaData.push({id:uid(),mes:mes,valor:val,pago:pago,nota:nota});
+  bocaData.sort(function(a,b){return a.mes.localeCompare(b.mes);});
+  g('boca-val').value='';g('boca-nota').value='';
+  bocaSave();renderBoca();
+}
+function delBoca(id){bocaData=bocaData.filter(function(b){return b.id!==id;});bocaSave();renderBoca();}
+
+function renderBoca(){
+  var el=g('lst-boca');if(!el)return;
+  bocaLoad();
+  var total=bocaData.reduce(function(s,b){return s+(b.pago!=='nao'?b.valor:0);},0);
+  var meses=bocaData.length;
+  var rc=g('boca-resumo-card');
+  if(rc)rc.innerHTML='<div class="ct">Resumo desde 2023</div>'
+    +'<div class="metrics" style="margin-bottom:0;">'
+    +'<div class="metric"><div class="ml">Total pago</div><div class="mv g">'+fmt(total)+'</div></div>'
+    +'<div class="metric"><div class="ml">Meses registados</div><div class="mv">'+meses+'</div></div>'
+    +'<div class="metric"><div class="ml">Não pagos</div><div class="mv r">'+bocaData.filter(function(b){return b.pago==='nao';}).length+'</div></div>'
+    +'</div>';
+  if(!bocaData.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem registos. Adiciona os pagamentos desde 2023.</div>';return;}
+  var html='';
+  var sorted=[...bocaData].sort(function(a,b){return b.mes.localeCompare(a.mes);});
+  sorted.forEach(function(b){
+    var cor=b.pago==='sim'?'var(--green)':b.pago==='parcial'?'var(--amber)':'var(--red)';
+    var emoji=b.pago==='sim'?'✓':b.pago==='parcial'?'~':'✗';
+    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:600;">'+emoji+'</span>'+b.mes+'</div>'+(b.nota?'<div class="ls">'+b.nota+'</div>':'')+'</div><div class="lr"><span class="am" style="color:'+cor+';">'+fmt(b.valor)+'</span><button class="btn bd bxs" onclick="delBoca(\''+b.id+'\')">×</button></div></div>';
+  });
+  el.innerHTML=html;
+}
+
+// ===== RENDA (casa alugada) =====
+var rendaData=[];
+function rendaKey(){return LS_KEY+'_renda';}
+function rendaSave(){try{localStorage.setItem(rendaKey(),JSON.stringify(rendaData));}catch(e){}saveAll();}
+function rendaLoad(){try{var r=localStorage.getItem(rendaKey());if(r)rendaData=JSON.parse(r);}catch(e){}}
+
+function addRenda(){
+  var mes=g('renda-mes').value,esp=parseFloat(g('renda-esp').value)||0,rec=parseFloat(g('renda-rec').value)||0,pago=g('renda-pago').value,nota=g('renda-nota').value.trim();
+  if(!mes){alert('Selecciona o mês.');return;}
+  rendaData=rendaData.filter(function(r){return r.mes!==mes;});
+  rendaData.push({id:uid(),mes:mes,esperado:esp,recebido:rec,pago:pago,nota:nota});
+  rendaData.sort(function(a,b){return a.mes.localeCompare(b.mes);});
+  g('renda-esp').value='';g('renda-rec').value='';g('renda-nota').value='';
+  rendaSave();renderRenda();
+}
+function delRenda(id){rendaData=rendaData.filter(function(r){return r.id!==id;});rendaSave();renderRenda();}
+
+function renderRenda(){
+  var el=g('lst-renda');if(!el)return;
+  rendaLoad();
+  var totalEsp=rendaData.reduce(function(s,r){return s+r.esperado;},0);
+  var totalRec=rendaData.reduce(function(s,r){return s+r.recebido;},0);
+  var emFalta=totalEsp-totalRec;
+  var rc=g('renda-resumo-card');
+  if(rc)rc.innerHTML='<div class="ct">Resumo geral</div>'
+    +'<div class="metrics" style="margin-bottom:0;">'
+    +'<div class="metric"><div class="ml">Total esperado</div><div class="mv">'+fmt(totalEsp)+'</div></div>'
+    +'<div class="metric"><div class="ml">Total recebido</div><div class="mv g">'+fmt(totalRec)+'</div></div>'
+    +'<div class="metric"><div class="ml">Em falta</div><div class="mv '+(emFalta>0?'r':'g')+'">'+fmt(emFalta)+'</div></div>'
+    +'<div class="metric"><div class="ml">Não pagos</div><div class="mv r">'+rendaData.filter(function(r){return r.pago==='nao';}).length+'</div></div>'
+    +'</div>';
+  if(!rendaData.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem registos. Adiciona as rendas mês a mês.</div>';return;}
+  var html='';
+  var sorted=[...rendaData].sort(function(a,b){return b.mes.localeCompare(a.mes);});
+  sorted.forEach(function(r){
+    var cor=r.pago==='sim'?'var(--green)':r.pago==='parcial'?'var(--amber)':'var(--red)';
+    var emoji=r.pago==='sim'?'✓':r.pago==='parcial'?'~':'✗';
+    var diff=r.recebido-r.esperado;
+    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:600;">'+emoji+'</span>'+r.mes+'</div>'
+      +'<div class="ls">Esperado: '+fmt(r.esperado)+' · Recebido: '+fmt(r.recebido)+(diff<0?' · <span style="color:var(--red);">Falta '+fmt(Math.abs(diff))+'</span>':'')+(r.nota?' · '+r.nota:'')+'</div></div>'
+      +'<div class="lr"><span class="am" style="color:'+cor+';">'+fmt(r.recebido)+'</span><button class="btn bd bxs" onclick="delRenda(\''+r.id+'\')">×</button></div></div>';
+  });
+  el.innerHTML=html;
+}
+
+// Override go() to add boca/renda pages
+var _goOrig=go;
+go=function(page){
+  _goOrig(page);
+  if(page==='boca'){bocaLoad();setTd2('boca-mes');renderBoca();}
+  if(page==='renda'){rendaLoad();setTd2('renda-mes');renderRenda();}
+};
+function setTd2(id){var e=g(id);if(e&&!e.value){var n=new Date();e.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}}
