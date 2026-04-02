@@ -169,3 +169,32 @@ hr{border:none;border-top:.5px solid var(--border);margin:1.1rem 0;}
   .nav-mobile{display:none;}
   #mobile-menu{display:none!important;}
 }
+
+/* ===== NAV OVERRIDES ===== */
+.nav-desktop{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:56px;position:sticky;top:0;z-index:200;gap:8px;}
+.nav-desktop .brand{flex-shrink:0;}
+.nav-mobile{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0 1rem;height:56px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+
+/* HAMBURGER BUTTON */
+.hamburger-btn{display:flex;flex-direction:column;justify-content:center;gap:5px;background:transparent;border:none;cursor:pointer;padding:8px;border-radius:8px;transition:background .15s;}
+.hamburger-btn:hover{background:var(--surface2);}
+.hamburger-btn span{display:block;width:22px;height:2px;background:var(--t);border-radius:2px;transition:all .2s;}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger-btn.open span:nth-child(2){opacity:0;}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+/* MOBILE DROPDOWN MENU */
+.mobile-menu-closed{display:none;}
+.mobile-menu-open{display:block;position:fixed;top:56px;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:198;}
+.mobile-menu-open .mobile-menu-grid{position:absolute;top:0;left:0;right:0;background:var(--surface);padding:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:80vh;overflow-y:auto;}
+.mobile-menu-grid button{padding:12px 10px;border-radius:var(--r);background:var(--surface2);border:none;cursor:pointer;font-family:'Karla',sans-serif;font-size:13px;font-weight:500;color:var(--t);text-align:center;transition:all .15s;}
+.mobile-menu-grid button:active{background:var(--t);color:#fff;}
+.mobile-menu-grid button.active-page{background:var(--t);color:#fff;}
+
+@media(max-width:640px){
+  .nav-desktop{display:none;}
+  .nav-mobile{display:flex;}
+}
+@media(min-width:641px){
+  .nav-mobile,.mobile-menu-open,.mobile-menu-closed{display:none!important;}
+}
