@@ -57,29 +57,24 @@ function toggleMore(){MORE_OPEN=!MORE_OPEN;var m=g('more-menu');if(m)m.className
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
-  // Update mobile nav label
   var labels={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal'};
   var nc=g('nav-current');if(nc)nc.textContent=labels[page]||page;
-  // Update mobile menu active state
-  document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){b.classList.remove('active-page');if(b.textContent.toLowerCase().includes((labels[page]||page).toLowerCase().slice(0,5)))b.classList.add('active-page');});
-  document.querySelectorAll('.bnav-item').forEach(function(b){b.classList.remove('on');});
-  document.querySelectorAll('.more-item,.nav-more-btn').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){b.classList.remove('active-page');});
+  document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){if(b.getAttribute('data-page')===page)b.classList.add('active-page');});
   var el=g('page-'+page);if(el)el.classList.add('on');
-  var map={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',investir:'Investir',dicas:'Dicas',mentor:'Mentor'};
-  document.querySelectorAll('.tab').forEach(function(t){if(t.textContent===map[page])t.classList.add('on');});
-  var bn=g('bn-'+page);if(bn)bn.classList.add('on');
-  var mm=g('mm-'+page);if(mm){mm.classList.add('on');var mbtn=g('bn-more');if(mbtn)mbtn.classList.add('on');}
-  if(MORE_OPEN&&!['desafios','desejos','investir','dicas','mentor'].includes(page)){MORE_OPEN=false;var me=g('more-menu');if(me)me.className='more-menu';}
+  document.querySelectorAll('.tab').forEach(function(t){if(t.textContent===(labels[page]||page))t.classList.add('on');});
   if(page==='resumo')renderResumo();
-  if(page==='entradas'){setTd('sl-dt');setTd('caf-dt');setTd('pv-dt');renderEntradas();}
-  if(page==='despesas'){setTd('da-dt');renderDesp();}
-  if(page==='diario'){setTd('dr-dt');renderDiar();}
-  if(page==='objetivos')renderObjs();
-  if(page==='desafios')renderDesafios();
-  if(page==='desejos'){renderDesejos();analisarDesejos();}
-  if(page==='investir')renderInvestir();
-  if(page==='dicas')renderDicas();
-  if(page==='mentor')renderMentorSugs();
+  else if(page==='entradas'){setTd('sl-dt');setTd('caf-dt');setTd('pv-dt');renderEntradas();}
+  else if(page==='despesas'){setTd('da-dt');renderDesp();}
+  else if(page==='diario'){setTd('dr-dt');renderDiar();}
+  else if(page==='objetivos')renderObjs();
+  else if(page==='desafios')renderDesafios();
+  else if(page==='desejos'){renderDesejos();analisarDesejos();}
+  else if(page==='investir')renderInvestir();
+  else if(page==='dicas')renderDicas();
+  else if(page==='mentor')renderMentorSugs();
+  else if(page==='boca'){bocaLoadAll();setMobileMonth('boca-mes');renderBoca();}
+  else if(page==='renda'){rendaLoadAll();setMobileMonth('renda-mes');renderRenda();}
 }
 function reRender(){populateSels();var a=document.querySelector('.page.on');if(!a)return;go(a.id.replace('page-',''));}
 
@@ -88,7 +83,7 @@ function allMonths(){var s=new Set(),n=new Date();for(var i=5;i>=0;i--){var d=ne
 function populateSels(){var months=allMonths(),c=cur();['r-month','e-month','d-month'].forEach(function(id){var el=g(id);if(!el)return;var prev=el.value||c;el.innerHTML=months.map(function(m){return'<option value="'+m+'"'+(m===prev?' selected':'')+'>'+mlbl(m)+'</option>';}).join('');});}
 function openM(id){g(id).classList.add('on');}
 function closeM(id){g(id).classList.remove('on');}
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.on').forEach(function(m){m.classList.remove('on');});if(MORE_OPEN){MORE_OPEN=false;var me=g('more-menu');if(me)me.className='more-menu';}}});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.on').forEach(function(m){m.classList.remove('on');});var me=g('mobile-menu');if(me&&NAV_OPEN){NAV_OPEN=false;me.className='mobile-menu-closed';var btn=document.querySelector('.hamburger-btn');if(btn)btn.className='hamburger-btn';}}});
 
 // ===== CICLO =====
 function cycleInfo(){var n=new Date(),start,end;if(n.getDate()>=5){start=new Date(n.getFullYear(),n.getMonth(),5);end=new Date(n.getFullYear(),n.getMonth()+1,4);}else{start=new Date(n.getFullYear(),n.getMonth()-1,5);end=new Date(n.getFullYear(),n.getMonth(),4);}var dl=Math.max(Math.ceil((end-n)/(1000*60*60*24)),0),td=Math.round((end-start)/(1000*60*60*24));return{daysLeft:dl,totalDays:td,end:end};}
@@ -602,10 +597,3 @@ function renderRenda(){
   el.innerHTML=html;
 }
 
-// Override go() extension for boca/renda
-var _goBase=go;
-go=function(page){
-  _goBase(page);
-  if(page==='boca'){bocaLoadAll();setMobileMonth('boca-mes');renderBoca();}
-  if(page==='renda'){rendaLoadAll();setMobileMonth('renda-mes');renderRenda();}
-};
