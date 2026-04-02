@@ -31,12 +31,37 @@ function loadAndStart(){var local=lsLoad();if(local)applyData(local);else templa
 function doLogin(){var code=g('login-code').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');if(code.length<3){g('login-err').textContent='Código demasiado curto.';return;}USER_KEY=code;LS_KEY='financas_v3_'+code.replace(/[^a-z0-9]/g,'');g('login-screen').style.display='none';g('app').style.display='block';localStorage.setItem('cf_last_code',code);loadAndStart();}
 window.addEventListener('load',function(){var last=localStorage.getItem('cf_last_code');if(last){g('login-code').value=last;doLogin();}});
 
+
+// ===== MOBILE NAV =====
+var NAV_OPEN=false;
+function toggleNav(){
+  NAV_OPEN=!NAV_OPEN;
+  var menu=g('mobile-menu');
+  var btn=document.querySelector('.hamburger-btn');
+  if(!menu)return;
+  menu.className=NAV_OPEN?'mobile-menu-open':'mobile-menu-closed';
+  if(btn)btn.className='hamburger-btn'+(NAV_OPEN?' open':'');
+}
+// Close menu on outside click
+document.addEventListener('click',function(e){
+  if(NAV_OPEN&&!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){
+    NAV_OPEN=false;
+    var menu=g('mobile-menu');if(menu)menu.className='mobile-menu-closed';
+    var btn=document.querySelector('.hamburger-btn');if(btn)btn.className='hamburger-btn';
+  }
+});
+
 // ===== NAV =====
 var MORE_OPEN=false;
 function toggleMore(){MORE_OPEN=!MORE_OPEN;var m=g('more-menu');if(m)m.className='more-menu'+(MORE_OPEN?' open':'');}
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  // Update mobile nav label
+  var labels={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal'};
+  var nc=g('nav-current');if(nc)nc.textContent=labels[page]||page;
+  // Update mobile menu active state
+  document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){b.classList.remove('active-page');if(b.textContent.toLowerCase().includes((labels[page]||page).toLowerCase().slice(0,5)))b.classList.add('active-page');});
   document.querySelectorAll('.bnav-item').forEach(function(b){b.classList.remove('on');});
   document.querySelectorAll('.more-item,.nav-more-btn').forEach(function(b){b.classList.remove('on');});
   var el=g('page-'+page);if(el)el.classList.add('on');
@@ -440,52 +465,100 @@ function openM(id){g(id).classList.add('on');}
 function closeM(id){g(id).classList.remove('on');}
 function allMonths(){var s=new Set(),n=new Date();for(var i=5;i>=0;i--){var d=new Date(n.getFullYear(),n.getMonth()-i,1);s.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}[...entradas,...despesas,...diario].forEach(function(x){if(x.data)s.add(mk(x.data));});return[...s].sort();}
 
-// ===== BOCA (casa que estão a pagar) =====
-var bocaData=[];
-function bocaKey(){return LS_KEY+'_boca';}
-function bocaSave(){try{localStorage.setItem(bocaKey(),JSON.stringify(bocaData));}catch(e){}saveAll();}
-function bocaLoad(){try{var r=localStorage.getItem(bocaKey());if(r)bocaData=JSON.parse(r);}catch(e){}}
+
+
+// ===== MOBILE MONTH INPUT =====
+function setMobileMonth(id){var e=g(id);if(e&&!e.value){var n=new Date();e.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}}
+
+// ===== CASA PORTUGAL =====
+var bocaData=[],bocaConfig={total:0};
+
+function bocaSaveAll(){
+  lsSave();
+  try{localStorage.setItem(LS_KEY+'_boca',JSON.stringify({data:bocaData,config:bocaConfig}));}catch(e){}
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'_boca',data:{data:bocaData,config:bocaConfig}})}).catch(function(){});
+}
+function bocaLoadAll(){
+  try{
+    var r=localStorage.getItem(LS_KEY+'_boca');
+    if(r){var p=JSON.parse(r);bocaData=p.data||[];bocaConfig=p.config||{total:0};}
+  }catch(e){}
+  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'_boca'})})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(res){if(res&&res.data){bocaData=res.data.data||bocaData;bocaConfig=res.data.config||bocaConfig;renderBoca();}})
+    .catch(function(){});
+}
+
+function saveBocaConfig(){
+  var val=parseFloat(g('boca-total').value)||0;
+  if(val<=0){alert('Insere o valor total da casa.');return;}
+  bocaConfig.total=val;
+  bocaSaveAll();renderBoca();
+  alert('Valor total da casa guardado: '+fmt(val));
+}
 
 function addBoca(){
   var mes=g('boca-mes').value,val=parseFloat(g('boca-val').value)||0,pago=g('boca-pago').value,nota=g('boca-nota').value.trim();
   if(!mes){alert('Selecciona o mês.');return;}
-  // Remove se já existe esse mês
   bocaData=bocaData.filter(function(b){return b.mes!==mes;});
   bocaData.push({id:uid(),mes:mes,valor:val,pago:pago,nota:nota});
   bocaData.sort(function(a,b){return a.mes.localeCompare(b.mes);});
   g('boca-val').value='';g('boca-nota').value='';
-  bocaSave();renderBoca();
+  bocaSaveAll();renderBoca();
 }
-function delBoca(id){bocaData=bocaData.filter(function(b){return b.id!==id;});bocaSave();renderBoca();}
+function delBoca(id){bocaData=bocaData.filter(function(b){return b.id!==id;});bocaSaveAll();renderBoca();}
 
 function renderBoca(){
   var el=g('lst-boca');if(!el)return;
-  bocaLoad();
-  var total=bocaData.reduce(function(s,b){return s+(b.pago!=='nao'?b.valor:0);},0);
-  var meses=bocaData.length;
+  // Set config input if value exists
+  if(bocaConfig.total>0){var ti=g('boca-total');if(ti&&!ti.value)ti.value=bocaConfig.total;}
+  var totalPago=bocaData.reduce(function(s,b){return s+(b.pago!=='nao'?b.valor:0);},0);
+  var totalCasa=bocaConfig.total||0;
+  var falta=Math.max(totalCasa-totalPago,0);
+  var pct=totalCasa>0?Math.min(Math.round((totalPago/totalCasa)*100),100):0;
   var rc=g('boca-resumo-card');
-  if(rc)rc.innerHTML='<div class="ct">Resumo desde 2023</div>'
-    +'<div class="metrics" style="margin-bottom:0;">'
-    +'<div class="metric"><div class="ml">Total pago</div><div class="mv g">'+fmt(total)+'</div></div>'
-    +'<div class="metric"><div class="ml">Meses registados</div><div class="mv">'+meses+'</div></div>'
-    +'<div class="metric"><div class="ml">Não pagos</div><div class="mv r">'+bocaData.filter(function(b){return b.pago==='nao';}).length+'</div></div>'
-    +'</div>';
-  if(!bocaData.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem registos. Adiciona os pagamentos desde 2023.</div>';return;}
-  var html='';
+  if(rc){
+    rc.innerHTML='<div class="ct">Progresso — Casa Portugal</div>'
+      +(totalCasa>0?
+        '<div class="metrics" style="margin-bottom:.7rem;">'
+        +'<div class="metric"><div class="ml">Valor total</div><div class="mv">'+fmt(totalCasa)+'</div></div>'
+        +'<div class="metric"><div class="ml">Já paguei</div><div class="mv g">'+fmt(totalPago)+'</div></div>'
+        +'<div class="metric"><div class="ml">Ainda falta</div><div class="mv '+(falta>0?'r':'g')+'">'+fmt(falta)+'</div></div>'
+        +'<div class="metric"><div class="ml">Pago</div><div class="mv '+(pct>=100?'g':'a')+'">'+pct+'%</div></div>'
+        +'</div>'
+        +'<div class="pbar" style="margin-bottom:.5rem;height:12px;"><div class="pfill" style="width:'+pct+'%;background:var(--green);"></div></div>'
+        +'<div style="font-size:12px;color:var(--t2);">'+bocaData.length+' meses registados'+(bocaData.filter(function(b){return b.pago==='nao';}).length>0?' · <span style="color:var(--red);">'+bocaData.filter(function(b){return b.pago==='nao';}).length+' não pagos</span>':'')+'</div>'
+        :'<div class="alert ala">Define primeiro o valor total da casa no campo acima.</div>');
+  }
+  if(!bocaData.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem registos. Adiciona os pagamentos desde 2023, mês a mês.</div>';return;}
   var sorted=[...bocaData].sort(function(a,b){return b.mes.localeCompare(a.mes);});
+  var html='';
   sorted.forEach(function(b){
     var cor=b.pago==='sim'?'var(--green)':b.pago==='parcial'?'var(--amber)':'var(--red)';
     var emoji=b.pago==='sim'?'✓':b.pago==='parcial'?'~':'✗';
-    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:600;">'+emoji+'</span>'+b.mes+'</div>'+(b.nota?'<div class="ls">'+b.nota+'</div>':'')+'</div><div class="lr"><span class="am" style="color:'+cor+';">'+fmt(b.valor)+'</span><button class="btn bd bxs" onclick="delBoca(\''+b.id+'\')">×</button></div></div>';
+    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:700;font-size:15px;">'+emoji+'</span>'+b.mes+'</div>'+(b.nota?'<div class="ls">'+b.nota+'</div>':'')+'</div><div class="lr"><span class="am" style="color:'+cor+';">'+fmt(b.valor)+'</span><button class="btn bd bxs" onclick="delBoca(''+b.id+'')">×</button></div></div>';
   });
   el.innerHTML=html;
 }
 
-// ===== RENDA (casa alugada) =====
-var rendaData=[];
-function rendaKey(){return LS_KEY+'_renda';}
-function rendaSave(){try{localStorage.setItem(rendaKey(),JSON.stringify(rendaData));}catch(e){}saveAll();}
-function rendaLoad(){try{var r=localStorage.getItem(rendaKey());if(r)rendaData=JSON.parse(r);}catch(e){}}
+// ===== RENDA PORTUGAL =====
+var rendaData=[],rendaConfig={esperadoMensal:0};
+
+function rendaSaveAll(){
+  lsSave();
+  try{localStorage.setItem(LS_KEY+'_renda',JSON.stringify({data:rendaData,config:rendaConfig}));}catch(e){}
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'_renda',data:{data:rendaData,config:rendaConfig}})}).catch(function(){});
+}
+function rendaLoadAll(){
+  try{
+    var r=localStorage.getItem(LS_KEY+'_renda');
+    if(r){var p=JSON.parse(r);rendaData=p.data||[];rendaConfig=p.config||{esperadoMensal:0};}
+  }catch(e){}
+  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'_renda'})})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(res){if(res&&res.data){rendaData=res.data.data||rendaData;rendaConfig=res.data.config||rendaConfig;renderRenda();}})
+    .catch(function(){});
+}
 
 function addRenda(){
   var mes=g('renda-mes').value,esp=parseFloat(g('renda-esp').value)||0,rec=parseFloat(g('renda-rec').value)||0,pago=g('renda-pago').value,nota=g('renda-nota').value.trim();
@@ -494,43 +567,45 @@ function addRenda(){
   rendaData.push({id:uid(),mes:mes,esperado:esp,recebido:rec,pago:pago,nota:nota});
   rendaData.sort(function(a,b){return a.mes.localeCompare(b.mes);});
   g('renda-esp').value='';g('renda-rec').value='';g('renda-nota').value='';
-  rendaSave();renderRenda();
+  rendaSaveAll();renderRenda();
 }
-function delRenda(id){rendaData=rendaData.filter(function(r){return r.id!==id;});rendaSave();renderRenda();}
+function delRenda(id){rendaData=rendaData.filter(function(r){return r.id!==id;});rendaSaveAll();renderRenda();}
 
 function renderRenda(){
   var el=g('lst-renda');if(!el)return;
-  rendaLoad();
   var totalEsp=rendaData.reduce(function(s,r){return s+r.esperado;},0);
   var totalRec=rendaData.reduce(function(s,r){return s+r.recebido;},0);
   var emFalta=totalEsp-totalRec;
+  var naoPagos=rendaData.filter(function(r){return r.pago==='nao';});
   var rc=g('renda-resumo-card');
-  if(rc)rc.innerHTML='<div class="ct">Resumo geral</div>'
-    +'<div class="metrics" style="margin-bottom:0;">'
-    +'<div class="metric"><div class="ml">Total esperado</div><div class="mv">'+fmt(totalEsp)+'</div></div>'
-    +'<div class="metric"><div class="ml">Total recebido</div><div class="mv g">'+fmt(totalRec)+'</div></div>'
-    +'<div class="metric"><div class="ml">Em falta</div><div class="mv '+(emFalta>0?'r':'g')+'">'+fmt(emFalta)+'</div></div>'
-    +'<div class="metric"><div class="ml">Não pagos</div><div class="mv r">'+rendaData.filter(function(r){return r.pago==='nao';}).length+'</div></div>'
-    +'</div>';
+  if(rc&&rendaData.length){
+    rc.innerHTML='<div class="ct">Resumo — Renda Portugal</div>'
+      +'<div class="metrics" style="margin-bottom:0;">'
+      +'<div class="metric"><div class="ml">Total esperado</div><div class="mv">'+fmt(totalEsp)+'</div></div>'
+      +'<div class="metric"><div class="ml">Total recebido</div><div class="mv g">'+fmt(totalRec)+'</div></div>'
+      +'<div class="metric"><div class="ml">Em falta</div><div class="mv '+(emFalta>0?'r':'g')+'">'+fmt(emFalta)+'</div></div>'
+      +'<div class="metric"><div class="ml">Não pagos</div><div class="mv '+(naoPagos.length>0?'r':'g')+'">'+naoPagos.length+'</div></div>'
+      +'</div>'
+      +(naoPagos.length>0?'<div class="alert alr" style="margin-top:.7rem;">Meses não pagos: '+naoPagos.map(function(r){return r.mes;}).join(', ')+'</div>':'');
+  }
   if(!rendaData.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem registos. Adiciona as rendas mês a mês.</div>';return;}
-  var html='';
   var sorted=[...rendaData].sort(function(a,b){return b.mes.localeCompare(a.mes);});
+  var html='';
   sorted.forEach(function(r){
     var cor=r.pago==='sim'?'var(--green)':r.pago==='parcial'?'var(--amber)':'var(--red)';
     var emoji=r.pago==='sim'?'✓':r.pago==='parcial'?'~':'✗';
     var diff=r.recebido-r.esperado;
-    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:600;">'+emoji+'</span>'+r.mes+'</div>'
-      +'<div class="ls">Esperado: '+fmt(r.esperado)+' · Recebido: '+fmt(r.recebido)+(diff<0?' · <span style="color:var(--red);">Falta '+fmt(Math.abs(diff))+'</span>':'')+(r.nota?' · '+r.nota:'')+'</div></div>'
-      +'<div class="lr"><span class="am" style="color:'+cor+';">'+fmt(r.recebido)+'</span><button class="btn bd bxs" onclick="delRenda(\''+r.id+'\')">×</button></div></div>';
+    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:700;font-size:15px;">'+emoji+'</span>'+r.mes+'</div>'
+      +'<div class="ls">Esperado: '+fmt(r.esperado)+' · Recebido: '+fmt(r.recebido)+(diff<0?' · <span style="color:var(--red);">Falta '+fmt(Math.abs(diff))+'</span>':'')+(r.nota?' · <em>'+r.nota+'</em>':'')+'</div></div>'
+      +'<div class="lr"><span class="am" style="color:'+cor+';">'+fmt(r.recebido)+'</span><button class="btn bd bxs" onclick="delRenda(''+r.id+'')">×</button></div></div>';
   });
   el.innerHTML=html;
 }
 
-// Override go() to add boca/renda pages
-var _goOrig=go;
+// Override go() extension for boca/renda
+var _goBase=go;
 go=function(page){
-  _goOrig(page);
-  if(page==='boca'){bocaLoad();setTd2('boca-mes');renderBoca();}
-  if(page==='renda'){rendaLoad();setTd2('renda-mes');renderRenda();}
+  _goBase(page);
+  if(page==='boca'){bocaLoadAll();setMobileMonth('boca-mes');renderBoca();}
+  if(page==='renda'){rendaLoadAll();setMobileMonth('renda-mes');renderRenda();}
 };
-function setTd2(id){var e=g(id);if(e&&!e.value){var n=new Date();e.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}}
