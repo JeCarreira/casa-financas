@@ -456,8 +456,6 @@ function renderResumo(){
 // ===== REMINDER =====
 function checkReminder(){var last=localStorage.getItem('cf_last_reg'),tod=today();if(last===tod)return;var b=document.createElement('div');b.style.cssText='position:fixed;bottom:70px;right:1rem;left:1rem;max-width:400px;margin:0 auto;background:var(--t);color:#fff;border-radius:var(--rlg);padding:.9rem 1.2rem;z-index:999;display:flex;justify-content:space-between;align-items:center;gap:1rem;box-shadow:0 4px 20px rgba(0,0,0,.3);';b.innerHTML='<div><div style="font-weight:600;">Já registaste os gastos de hoje?</div><div style="font-size:12px;opacity:.65;">Abre o Diário!</div></div><button onclick="go(\'diario\');this.closest(\'[style]\').remove();localStorage.setItem(\'cf_last_reg\',\''+tod+'\');" style="background:var(--accent);color:#fff;border:none;border-radius:5px;padding:7px 12px;font-weight:600;cursor:pointer;font-size:13px;">Registar</button>';document.body.appendChild(b);setTimeout(function(){if(b.parentElement)b.remove();},12000);}
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&USER_KEY)checkReminder();});
-function closeM(id){g(id).classList.remove('on');}
-function allMonths(){var s=new Set(),n=new Date();for(var i=5;i>=0;i--){var d=new Date(n.getFullYear(),n.getMonth()-i,1);s.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}[...entradas,...despesas,...diario].forEach(function(x){if(x.data)s.add(mk(x.data));});return[...s].sort();}
 
 
 
@@ -530,7 +528,7 @@ function renderBoca(){
   sorted.forEach(function(b){
     var cor=b.pago==='sim'?'var(--green)':b.pago==='parcial'?'var(--amber)':'var(--red)';
     var emoji=b.pago==='sim'?'✓':b.pago==='parcial'?'~':'✗';
-    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:700;font-size:15px;">'+emoji+'</span>'+b.mes+'</div>'+(b.nota?'<div class="ls">'+b.nota+'</div>':'')+'</div><div class="lr"><span class="am" style="color:'+cor+';">'+fmt(b.valor)+'</span><button class="btn bd bxs" onclick="delBoca(''+b.id+'')">×</button></div></div>';
+    html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:700;font-size:15px;">'+emoji+'</span>'+b.mes+'</div>'+(b.nota?'<div class="ls">'+b.nota+'</div>':'')+'</div><div class="lr"><span class="am" style="color:'+cor+';">'+fmt(b.valor)+'</span><button class="btn bd bxs" onclick="delBoca(\''+b.id+'\')">×</button></div></div>';
   });
   el.innerHTML=html;
 }
@@ -591,7 +589,7 @@ function renderRenda(){
     var diff=r.recebido-r.esperado;
     html+='<div class="li"><div class="ll"><div class="ln" style="display:flex;align-items:center;gap:6px;"><span style="color:'+cor+';font-weight:700;font-size:15px;">'+emoji+'</span>'+r.mes+'</div>'
       +'<div class="ls">Esperado: '+fmt(r.esperado)+' · Recebido: '+fmt(r.recebido)+(diff<0?' · <span style="color:var(--red);">Falta '+fmt(Math.abs(diff))+'</span>':'')+(r.nota?' · <em>'+r.nota+'</em>':'')+'</div></div>'
-      +'<div class="lr"><span class="am" style="color:'+cor+';">'+fmt(r.recebido)+'</span><button class="btn bd bxs" onclick="delRenda(''+r.id+'')">×</button></div></div>';
+      +'<div class="lr"><span class="am" style="color:'+cor+';">'+fmt(r.recebido)+'</span><button class="btn bd bxs" onclick="delRenda(\''+r.id+'\')">×</button></div></div>';
   });
   el.innerHTML=html;
 }
