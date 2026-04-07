@@ -43,8 +43,32 @@ function loadAndStart(){
   populateSels();renderResumo();renderTpl();renderDesafiosSugeridos();renderInvestir();renderDicas();renderMentorSugs();
   setTimeout(checkReminder,2500);
   fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY})}).then(function(r){return r.ok?r.json():null;}).then(function(res){if(!res||!res.data)return;var lt=local?local._ts||0:0,ct=res.data._ts||0;if(ct>lt){applyData(res.data);lsSave();populateSels();reRender();}}).catch(function(){});
-  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca'})}).then(function(r){return r.ok?r.json():null;}).then(function(res){if(res&&res.data){bocaData=res.data.data||bocaData;bocaConfig=res.data.config||bocaConfig;lsSave();}}).catch(function(){});
-  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda'})}).then(function(r){return r.ok?r.json():null;}).then(function(res){if(res&&res.data){rendaData=res.data||rendaData;lsSave();}}).catch(function(){});
+  var bocaKeys=[USER_KEY+'boca', USER_KEY+'_boca'];
+  (function tryNextBocaKey(keys,i){
+    if(i>=keys.length)return;
+    fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:keys[i]})})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(res){
+        if(res&&res.data){
+          var d=res.data.data||res.data||[];
+          if(Array.isArray(d)&&d.length>bocaData.length){bocaData=d;bocaConfig=res.data.config||bocaConfig;lsSave();var el=document.querySelector('.page.on');if(el&&el.id==='page-boca')renderBoca();}
+          else if(!Array.isArray(d)){bocaData=res.data.data||bocaData;bocaConfig=res.data.config||bocaConfig;lsSave();}
+        } else { tryNextBocaKey(keys,i+1); }
+      }).catch(function(){tryNextBocaKey(keys,i+1);});
+  })(bocaKeys,0);
+  // Try multiple key variants to recover renda data
+  var rendaKeys=[USER_KEY+'renda', USER_KEY+'_renda'];
+  (function tryNextRendaKey(keys,i){
+    if(i>=keys.length)return;
+    fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:keys[i]})})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(res){
+        if(res&&res.data&&((Array.isArray(res.data)&&res.data.length>0)||(res.data.data&&res.data.data.length>0))){
+          var rd=Array.isArray(res.data)?res.data:(res.data.data||[]);
+          if(rd.length>rendaData.length){rendaData=rd;lsSave();var el=document.querySelector('.page.on');if(el&&el.id==='page-renda')renderRenda();}
+        } else { tryNextRendaKey(keys,i+1); }
+      }).catch(function(){tryNextRendaKey(keys,i+1);});
+  })(rendaKeys,0);
 }
 
 function doLogin(){
@@ -133,14 +157,10 @@ function renderPrevSugestoes(){
   var tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0);
   var saldoAtual=tIn-tD-tDi;
   var diasPassados=Math.max(ci.totalDays-ci.daysLeft,1);
-  // Use only daily spending for projection (fixed despesas are already committed)
   var gastoDiario=tDi/diasPassados;
-  var estimD5=gastoDiario*ci.daysLeft;
-  // Need remaining fixed despesas not yet paid this cycle
-  var despPorPagar=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada&&!d.pago;}).reduce(function(s,d){return s+d.valor;},0);
-  var totalNecessario=estimD5+despPorPagar;
+  var estimDiarios=gastoDiario*ci.daysLeft;
   var sug=[];
-  if(ci.daysLeft>0){var paraD5=Math.max(totalNecessario-saldoAtual,0);var gastoPorDia=gastoDiario>0?gastoDiario:0;sug.push({icon:'📅',bg:'var(--blue-bg)',cor:'var(--blue-t)',txt:'Faltam <strong>'+ci.daysLeft+' dias</strong> para o dia 5. '+(paraD5>0?'Guarda <strong>'+fmt(Math.round(paraD5))+'</strong> para cobrir o que falta.':'Estás bem para chegar ao dia 5 com saldo positivo.')+(gastoPorDia>0?' (média '+fmt(Math.round(gastoPorDia))+'/dia)':'')});}
+  if(ci.daysLeft>0){sug.push({icon:'📅',bg:'var(--blue-bg)',cor:'var(--blue-t)',txt:'Faltam <strong>'+ci.daysLeft+' dias</strong> para o dia 5. O teu saldo actual é <strong>'+fmt(saldoAtual)+'</strong>.'+(gastoDiario>0?' Gastas em média '+fmt(Math.round(gastoDiario))+'€/dia em gastos variáveis.':'')});}
   var objsPend=objetivos.filter(function(o){return Math.max(o.meta-(o.atual||0),0)>0;}).sort(function(a,b){return(a.meta-(a.atual||0))-(b.meta-(b.atual||0));});
   if(objsPend.length>0){var obj=objsPend[0],rest=Math.max(obj.meta-(obj.atual||0),0),contrib=Math.min(total*0.35,rest);if(rest<=total){sug.push({icon:'🏆',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Podes <strong>terminar já</strong> o objetivo "'+obj.nome+'" com <strong>'+fmt(rest)+'</strong>!'});}else if(contrib>0){sug.push({icon:'🎯',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Mete <strong>'+fmt(Math.round(contrib))+'</strong> no objetivo "'+obj.nome+'" — faltam '+fmt(rest)+'.'});}}
   sug.push({icon:'🏦',bg:'var(--surface2)',cor:'var(--t2)',txt:'Guarda pelo menos <strong>'+fmt(Math.round(total*0.15))+'</strong> como almofada para imprevistos.'});
@@ -187,7 +207,27 @@ function aplicarTpl(){
 }
 
 // DESPESAS
-function addDesp(){var desc=g('da-d').value.trim(),val=parseFloat(g('da-v').value),cat=g('da-c').value,data=g('da-dt').value||today();if(!desc||!val||val<=0){alert('Preenche descrição e valor.');return;}despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:data,tipo:'pontual',pago:false});g('da-d').value='';g('da-v').value='';saveAll();reRender();}
+function addDesp(){
+  var desc=g('da-d').value.trim(),val=parseFloat(g('da-v').value),cat=g('da-c').value,data=g('da-dt').value||today();
+  if(!desc||!val||val<=0){alert('Preenche descrição e valor.');return;}
+  var rec=g('da-rec')&&g('da-rec').checked;
+  var tipo=rec?'fixa':'pontual';
+  despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:data,tipo:tipo,pago:false,recorrente:rec});
+  // If recorrente, project to next 5 months
+  if(rec){
+    var bM=mk(data),bD=data.slice(8,10);
+    for(var i=1;i<=5;i++){
+      var nd=new Date(parseInt(bM.slice(0,4)),parseInt(bM.slice(5,7))-1+i,parseInt(bD));
+      var fM=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+      var futData=fM+'-'+bD;
+      if(!despesas.some(function(d){return d.desc===desc&&mk(d.data)===fM&&d.recorrente;})){
+        despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:futData,tipo:'fixa',pago:false,recorrente:true,projetada:true});
+      }
+    }
+  }
+  g('da-d').value='';g('da-v').value='';
+  saveAll();reRender();
+}
 function delDesp(id){despesas=despesas.filter(function(d){return d.id!==id;});saveAll();reRender();}
 function togglePago(id){var d=despesas.find(function(x){return x.id===id;});if(d){d.pago=!d.pago;saveAll();renderDesp();renderResumo();}}
 function renderDesp(){
