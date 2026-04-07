@@ -101,15 +101,13 @@
   <div class="page-hdr"><h1>Entradas</h1><select id="e-month" onchange="renderEntradas()" style="width:auto;font-size:13px;padding:6px 10px;"></select></div>
   <p class="sub">Salário, CAF e entradas previstas.</p>
   <div class="card">
-    <div class="ct" style="color:var(--green-t);">Salário Luis</div>
-    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="sl-d" value="Salário Luis"></div><div class="fg"><label>Valor (€)</label><input id="sl-v" type="number" placeholder="2400"></div><div class="fg"><label>Data</label><input id="sl-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addEnt('salario')">+ Adicionar</button></div></div>
-    <div id="lst-salario"></div>
+    <div class="ct" style="color:var(--green-t);">Entradas reais do mês</div>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Regista aqui salário, CAF ou qualquer outro rendimento recebido. Marca como recorrente para projectar automaticamente para os próximos meses.</p>
+    <div class="fr"><div class="fg" style="flex:2;"><label>De onde vem</label><input id="ent-d" placeholder="ex: Salário, CAF, Participação..."></div><div class="fg"><label>Valor (€)</label><input id="ent-v" type="number" placeholder="0"></div><div class="fg"><label>Data</label><input id="ent-dt" type="date"></div></div>
+    <div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input id="ent-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Entrada recorrente (projeta para os próximos meses automaticamente)</label><div style="margin-left:auto;"><button class="btn ba" onclick="addEnt('entrada')">+ Adicionar</button></div></div>
+    <div id="lst-entradas"></div>
   </div>
-  <div class="card">
-    <div class="ct" style="color:var(--blue-t);">CAF</div>
-    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="caf-d" value="CAF"></div><div class="fg"><label>Valor (€)</label><input id="caf-v" type="number" placeholder="0"></div><div class="fg"><label>Data</label><input id="caf-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addEnt('caf')">+ Adicionar</button></div></div>
-    <div id="lst-caf"></div>
-  </div>
+
   <div class="card" style="border-color:var(--purple);border-style:dashed;">
     <div class="ct" style="color:var(--purple-t);">Entradas previstas — não contam no saldo real</div>
     <div class="alert alp" style="margin-bottom:.7rem;">Regista o que esperas receber. Quando chegar, apaga e adiciona acima.</div>
