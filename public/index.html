@@ -129,7 +129,8 @@
   <div class="card">
     <div class="ct">Despesa pontual <span style="font-size:11px;font-weight:400;color:var(--t3);">— algo que só acontece de vez em quando</span></div>
     <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Farmácia, roupa..."></div><div class="fg"><label>Valor (€)</label><input id="da-v" type="number" placeholder="0"></div></div>
-    <div class="fr"><div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="da-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
+    <div class="fr"><div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="da-dt" type="date"></div></div>
+    <div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input id="da-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Despesa recorrente (projeta para os próximos meses automaticamente)</label><div style="margin-left:auto;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
   </div>
   <div class="card"><div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas do mês</div><span id="d-total-pill" class="pill pr">0 €</span></div><div id="lst-despesas"></div></div>
 </div>
@@ -207,26 +208,3 @@
   </div>
   <div class="card"><div class="ct">Histórico de pagamentos</div><div id="lst-boca"></div></div>
 </div>
-
-<!-- RENDA PORTUGAL -->
-<div class="page" id="page-renda">
-  <h1>Renda Portugal</h1>
-  <p class="sub">Controlo da renda que recebes — o que foi pago, o que ficou em falta.</p>
-  <div class="card">
-    <div class="ct">Registar renda</div>
-    <div class="fr"><div class="fg"><label>Mês</label><input id="renda-mes" type="month"></div><div class="fg"><label>Valor esperado (€)</label><input id="renda-esp" type="number" placeholder="0" step="0.01"></div><div class="fg"><label>Valor recebido (€)</label><input id="renda-rec" type="number" placeholder="0" step="0.01"></div></div>
-    <div class="fr"><div class="fg"><label>Estado</label><select id="renda-pago"><option value="sim">Pago completo</option><option value="parcial">Parcial — pagou menos</option><option value="nao">Não pago</option></select></div><div class="fg"><label>Notas</label><input id="renda-nota" placeholder="ex: Pagou menos, atrasou..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addRenda()">+ Registar</button></div></div>
-  </div>
-  <div class="card" id="renda-resumo-card"></div>
-  <div class="card"><div class="ct">Histórico de rendas</div><div id="lst-renda"></div></div>
-</div>
-
-</div><!-- /app -->
-
-<!-- MODAIS -->
-<div class="modal-overlay" id="m-addtpl"><div class="modal"><h2>Nova despesa fixa</h2><div class="fr"><div class="fg"><label>Descrição</label><input id="tpl-n" placeholder="ex: Renda, Internet..."></div></div><div class="fr"><div class="fg"><label>Valor (€)</label><input id="tpl-v" type="number" placeholder="0"></div><div class="fg"><label>Categoria</label><select id="tpl-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Outro</option></select></div><div class="fg"><label>Dia do mês</label><input id="tpl-dia" type="number" placeholder="1" min="1" max="28"></div></div><div class="mf"><button class="btn bg" onclick="closeM('m-addtpl')">Cancelar</button><button class="btn ba" onclick="addTpl()">Guardar</button></div></div></div>
-<div class="modal-overlay" id="m-obj-edit"><div class="modal"><h2 id="me-title">Actualizar objetivo</h2><div id="me-body"></div><div class="mf"><button class="btn bg" onclick="closeM('m-obj-edit')">Fechar</button></div></div></div>
-
-<script src="/app.js"></script>
-</body>
-</html>
