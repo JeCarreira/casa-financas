@@ -17,13 +17,17 @@ function dot(cat,sz){sz=sz||10;var c=CAT[cat]||'#888';return'<span style="displa
 function saldoCls(v){return v>=150?'saldo-verde':v>=100?'saldo-laranja':'saldo-vermelho';}
 function saldoEmoji(v){return v>=150?'🟢':v>=100?'🟠':'🔴';}
 
+
+// Helper: returns true for any real (non-prevista) entry - supports old and new data
+function isEntradaReal(e){ return e.tipo==='entrada'||e.tipo==='salario'||e.tipo==='caf'; }
+
 function getData(){return{entradas:entradas,despesas:despesas,diario:diario,objetivos:objetivos,desejos:desejos,templates:templates,desafios:desafios,notas:notas,_ts:Date.now()};}
 function applyData(d){if(!d)return;entradas=d.entradas||[];despesas=d.despesas||[];diario=d.diario||[];objetivos=d.objetivos||[];desejos=d.desejos||[];desafios=d.desafios||[];notas=d.notas||[];templates=(d.templates&&d.templates.length)?d.templates:defaultTpl();}
 function defaultTpl(){return[{id:'t1',nome:'Renda',valor:700,cat:'Habitação',ativo:true,dia:1,recorrente:true},{id:'t2',nome:'Electricidade + água + gás',valor:120,cat:'Serviços',ativo:true,dia:15,recorrente:true},{id:'t3',nome:'Internet + telemóvel',valor:60,cat:'Serviços',ativo:true,dia:10,recorrente:true},{id:'t4',nome:'Supermercado',valor:400,cat:'Alimentação',ativo:true,dia:5,recorrente:true},{id:'t5',nome:'Gasolina',valor:150,cat:'Transportes',ativo:true,dia:5,recorrente:true},{id:'t6',nome:'Escola / filhos',valor:200,cat:'Filhos',ativo:true,dia:1,recorrente:true}];}
 
 function lsSave(){if(!LS_KEY)return;var s=JSON.stringify(getData());try{localStorage.setItem(LS_KEY,s);}catch(e){}try{sessionStorage.setItem(LS_KEY,s);}catch(e){}try{localStorage.setItem(LS_KEY+'_boca',JSON.stringify({data:bocaData,config:bocaConfig}));}catch(e){}try{localStorage.setItem(LS_KEY+'_renda',JSON.stringify(rendaData));}catch(e){}}
 function lsLoad(){if(!LS_KEY)return null;try{var r=localStorage.getItem(LS_KEY)||sessionStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
-function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r)rendaData=JSON.parse(r);}catch(e){}}
+function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r){var rd=JSON.parse(r);rendaData=Array.isArray(rd)?rd:(rd.data||[]);}}catch(e){}}
 function setSS(s){var d=g('sync-dot'),l=g('sync-lbl');if(!d)return;d.className='dot'+(s==='syncing'?' syncing':s==='error'?' error':'');if(l)l.textContent=s==='syncing'?'a guardar...':s==='error'?'local':'guardado';}
 function saveAll(){
   if(!USER_KEY)return;
@@ -110,7 +114,7 @@ function addEnt(tipo){
 function delEnt(id){entradas=entradas.filter(function(e){return e.id!==id;});saveAll();reRender();}
 function renderEntradas(){
   var m=g('e-month').value;
-  var reais=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}).sort(function(a,b){return b.data.localeCompare(a.data);});
+  var reais=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).sort(function(a,b){return b.data.localeCompare(a.data);});
   var elr=g('lst-entradas');
   if(elr)elr.innerHTML=reais.length?reais.map(function(e){return'<div class="li"><div class="ll"><div class="ln">'+e.desc+(e.recorrente?'<span style="font-size:10px;color:var(--green-t);margin-left:5px;">↻</span>':'')+(e.projetada?'<span style="font-size:10px;color:var(--t3);margin-left:4px;">proj.</span>':'')+'</div><div class="ls">'+e.data+'</div></div><div class="lr"><span class="am ai">+'+fmt(e.valor)+'</span><button class="btn bd bxs" onclick="delEnt(\''+e.id+'\')">×</button></div></div>';}).join(''):'<div style="font-size:13px;color:var(--t3);padding:.4rem 0;">Sem entradas. Adiciona abaixo.</div>';
   var prevs=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
@@ -124,15 +128,19 @@ function renderPrevSugestoes(){
   if(!prevs.length){el.innerHTML='';return;}
   var total=prevs.reduce(function(s,e){return s+e.valor;},0);
   var ci=cycleInfo();
-  var tIn=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
+  var tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
   var tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
   var tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0);
   var saldoAtual=tIn-tD-tDi;
   var diasPassados=Math.max(ci.totalDays-ci.daysLeft,1);
-  var gastoDiario=(tD+tDi)/diasPassados;
+  // Use only daily spending for projection (fixed despesas are already committed)
+  var gastoDiario=tDi/diasPassados;
   var estimD5=gastoDiario*ci.daysLeft;
+  // Need remaining fixed despesas not yet paid this cycle
+  var despPorPagar=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada&&!d.pago;}).reduce(function(s,d){return s+d.valor;},0);
+  var totalNecessario=estimD5+despPorPagar;
   var sug=[];
-  if(ci.daysLeft>0){var paraD5=Math.max(estimD5-saldoAtual,0);sug.push({icon:'📅',bg:'var(--blue-bg)',cor:'var(--blue-t)',txt:'Faltam <strong>'+ci.daysLeft+' dias</strong> para o dia 5. Guarda <strong>'+fmt(Math.round(paraD5>0?paraD5:estimD5*1.1))+'</strong> para chegar com folga.'});}
+  if(ci.daysLeft>0){var paraD5=Math.max(totalNecessario-saldoAtual,0);var gastoPorDia=gastoDiario>0?gastoDiario:0;sug.push({icon:'📅',bg:'var(--blue-bg)',cor:'var(--blue-t)',txt:'Faltam <strong>'+ci.daysLeft+' dias</strong> para o dia 5. '+(paraD5>0?'Guarda <strong>'+fmt(Math.round(paraD5))+'</strong> para cobrir o que falta.':'Estás bem para chegar ao dia 5 com saldo positivo.')+(gastoPorDia>0?' (média '+fmt(Math.round(gastoPorDia))+'/dia)':'')});}
   var objsPend=objetivos.filter(function(o){return Math.max(o.meta-(o.atual||0),0)>0;}).sort(function(a,b){return(a.meta-(a.atual||0))-(b.meta-(b.atual||0));});
   if(objsPend.length>0){var obj=objsPend[0],rest=Math.max(obj.meta-(obj.atual||0),0),contrib=Math.min(total*0.35,rest);if(rest<=total){sug.push({icon:'🏆',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Podes <strong>terminar já</strong> o objetivo "'+obj.nome+'" com <strong>'+fmt(rest)+'</strong>!'});}else if(contrib>0){sug.push({icon:'🎯',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Mete <strong>'+fmt(Math.round(contrib))+'</strong> no objetivo "'+obj.nome+'" — faltam '+fmt(rest)+'.'});}}
   sug.push({icon:'🏦',bg:'var(--surface2)',cor:'var(--t2)',txt:'Guarda pelo menos <strong>'+fmt(Math.round(total*0.15))+'</strong> como almofada para imprevistos.'});
@@ -205,7 +213,7 @@ function togglePagoDiar(id){var d=diario.find(function(x){return x.id===id;});if
 function renderDiar(){
   var m=cur(),f=diario.filter(function(d){return mk(d.data)===m;}).sort(function(a,b){return b.data.localeCompare(a.data);});
   var total=f.reduce(function(s,d){return s+d.valor;},0);g('dr-total-pill').textContent='Este mês: '+fmt(total);
-  var ci=cycleInfo(),tIn=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
+  var ci=cycleInfo(),tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
   var tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
   var saldo=tIn-tD-total,maxD=ci.daysLeft>0?Math.max(0,Math.floor(saldo/ci.daysLeft)):0,ws=getWeekSpend();
   var alts='<div class="alert '+(saldo>=150?'alg':saldo>=100?'ala':'alr')+'">'+saldoEmoji(saldo)+' Saldo: <strong>'+fmt(saldo)+'</strong>'+(maxD>0?' · Máx. <strong>'+fmt(maxD)+'</strong>/dia':'')+'</div>';
@@ -251,7 +259,7 @@ function addWish(){var nome=g('w-nome').value.trim(),preco=parseFloat(g('w-preco
 function delWish(id){desejos=desejos.filter(function(d){return d.id!==id;});saveAll();renderDesejos();analisarDesejos();}
 function markWish(id){var w=desejos.find(function(d){return d.id===id;});if(w)w.comprado=!w.comprado;saveAll();renderDesejos();}
 function renderDesejos(){var el=g('lst-desejos');if(!el)return;if(!desejos.length){el.innerHTML='<div class="card"><div style="font-size:13px;color:var(--t3);">Sem itens.</div></div>';return;}var order={alta:0,media:1,baixa:2};el.innerHTML=[...desejos].sort(function(a,b){return order[a.prio]-order[b.prio];}).map(function(w){return'<div class="wish-item" style="'+(w.comprado?'opacity:.5;':'')+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div><div style="font-size:15px;font-weight:500;'+(w.comprado?'text-decoration:line-through;':'')+'">'+w.nome+'</div><div style="font-size:12px;color:var(--t3);">'+(w.prio==='alta'?'Alta':w.prio==='media'?'Média':'Baixa')+(w.notas?' · '+w.notas:'')+'</div></div><div style="font-size:18px;color:var(--accent);">'+fmt(w.preco)+'</div></div><div style="display:flex;gap:6px;"><button class="btn bg bsm" onclick="markWish(\''+w.id+'\')">'+(w.comprado?'Desfazer':'✓ Comprado')+'</button><button class="btn bd bxs" onclick="delWish(\''+w.id+'\')">Remover</button></div></div>';}).join('');}
-function analisarDesejos(){var el=g('wishes-ai');if(!el)return;var pend=desejos.filter(function(d){return!d.comprado;});if(!pend.length){el.innerHTML='';return;}var m=cur(),ci=cycleInfo(),tIn=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0),tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0),tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0),saldo=tIn-tD-tDi;if(ci.daysLeft<=10||saldo<200){el.innerHTML='<div class="alert ala" style="margin-bottom:.9rem;">Faltam '+ci.daysLeft+' dias para o dia 5 e saldo é '+fmt(saldo)+'. Adia as compras.</div>';return;}var mg=Math.max(saldo-200,0)*0.3,order={alta:0,media:1,baixa:2},melhor=[...pend].sort(function(a,b){return order[a.prio]-order[b.prio];}).find(function(w){return w.preco<=mg;});el.innerHTML=melhor?'<div class="ai-box" style="margin-bottom:.9rem;"><div class="ai-title">O que podes comprar</div><div class="ai-text">Com margem de '+fmt(mg)+': <strong>'+melhor.nome+'</strong> ('+fmt(melhor.preco)+') — a maior prioridade que cabe.</div></div>':'<div class="alert ala" style="margin-bottom:.9rem;">Nenhum item cabe na margem segura ('+fmt(mg)+').</div>';}
+function analisarDesejos(){var el=g('wishes-ai');if(!el)return;var pend=desejos.filter(function(d){return!d.comprado;});if(!pend.length){el.innerHTML='';return;}var m=cur(),ci=cycleInfo(),tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0),tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0),tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0),saldo=tIn-tD-tDi;if(ci.daysLeft<=10||saldo<200){el.innerHTML='<div class="alert ala" style="margin-bottom:.9rem;">Faltam '+ci.daysLeft+' dias para o dia 5 e saldo é '+fmt(saldo)+'. Adia as compras.</div>';return;}var mg=Math.max(saldo-200,0)*0.3,order={alta:0,media:1,baixa:2},melhor=[...pend].sort(function(a,b){return order[a.prio]-order[b.prio];}).find(function(w){return w.preco<=mg;});el.innerHTML=melhor?'<div class="ai-box" style="margin-bottom:.9rem;"><div class="ai-title">O que podes comprar</div><div class="ai-text">Com margem de '+fmt(mg)+': <strong>'+melhor.nome+'</strong> ('+fmt(melhor.preco)+') — a maior prioridade que cabe.</div></div>':'<div class="alert ala" style="margin-bottom:.9rem;">Nenhum item cabe na margem segura ('+fmt(mg)+').</div>';}
 
 // INVESTIR
 function renderInvestir(){var el=g('investir-content');if(!el)return;var cards=[{cor:'#1E6348',tag:'Porquê investir',t:'O poder do tempo',c:'200€/mês a 7%/ano valem 227.000€ aos 62 anos. Esperar 10 anos reduz para metade. O tempo é o teu maior activo.'},{cor:'#8B1F1F',tag:'Passo 1',t:'Reserva de emergência primeiro',c:'4.500€ a 9.000€ numa conta separada e intocável. Sem isto, não invistas — podes precisar do dinheiro no pior momento.'},{cor:'#7A4A0A',tag:'Passo 2',t:'PPR — o investimento para começar',c:'Benefício fiscal no IRS, capital protegido, cresce 2-5%/ano. Bankinter, BPI ou Pension. 50-100€/mês automaticamente.'},{cor:'#3D2580',tag:'Passo 3',t:'ETFs — para crescer a longo prazo',c:'MSCI World: 1.500 maiores empresas mundiais. Média 10%/ano nos últimos 30 anos. Trading 212 ou DEGIRO. 50€/mês.'},{cor:'#0E5E5E',tag:'Casa aos 40',t:'Casa própria até 2032',c:'35.000€ em 8 anos = 365€/mês numa conta separada só para a casa. Abre já e não toques.'},{cor:'#B5652A',tag:'Plano família',t:'O plano concreto para a Família Costa',c:'Agora: reserva emergência 200€/mês. Em paralelo: PPR 50€/mês. Poupança casa 200€/mês. Quando reserva feita: ETF 50€/mês.'}];el.innerHTML=cards.map(function(d){return'<div class="dica-card"><span class="dica-tag" style="background:'+d.cor+'20;color:'+d.cor+';">'+d.tag+'</span><div class="dica-title">'+d.t+'</div><div class="dica-body">'+d.c+'</div></div>';}).join('');}
@@ -272,7 +280,7 @@ function sendMentor(){
   msgs.innerHTML+='<div id="mentor-thinking" style="font-size:13px;color:var(--t3);padding:8px 0;">A pensar...</div>';
   var wrap=g('mentor-chat-wrap');if(wrap)wrap.scrollTop=wrap.scrollHeight;
   MENTOR_HISTORY.push({role:'user',content:userMsg});
-  var m=cur(),tIn=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0),tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0),tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0),saldo=tIn-tD-tDi,ci=cycleInfo();
+  var m=cur(),tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0),tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0),tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0),saldo=tIn-tD-tDi,ci=cycleInfo();
   var objsStr=objetivos.map(function(o){return o.nome+' ('+fmt(o.atual||0)+'/'+fmt(o.meta)+')';}).join(', ')||'nenhum';
   var sys='És um mentor financeiro pessoal da Família Costa — 2 adultos (32 anos), 2 crianças. Objectivo: casa própria e construir património até aos 40. Problema principal: compras impulsivas. Perfil de risco: muito baixo.\n\nDados actuais:\nEntradas: '+fmt(tIn)+' | Despesas: '+fmt(tD)+' | Diário: '+fmt(tDi)+' | Saldo: '+fmt(saldo)+' | Dias para dia 5: '+ci.daysLeft+'\nObjetivos: '+objsStr+'\n\nResponde em português de Portugal. Sê directo, caloroso, prático. Máximo 120 palavras. Faz UMA pergunta estratégica no final.';
   fetch(API+'/mentor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:MENTOR_HISTORY.slice(-8),systemPrompt:sys})})
@@ -291,7 +299,7 @@ document.addEventListener('DOMContentLoaded',function(){var inp=g('mentor-input'
 // RESUMO
 function renderResumo(){
   var m=g('r-month')?g('r-month').value:cur(),isCur=m===cur();
-  var entIn=entradas.filter(function(e){return e.tipo==='entrada'&&mk(e.data)===m;}),entPrev=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
+  var entIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}),entPrev=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
   var despIn=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}),diIn=diario.filter(function(d){return mk(d.data)===m;});
   var tIn=entIn.reduce(function(s,e){return s+e.valor;},0),tPrev=entPrev.reduce(function(s,e){return s+e.valor;},0);
   var tD=despIn.reduce(function(s,d){return s+d.valor;},0),tDi=diIn.reduce(function(s,d){return s+d.valor;},0);
