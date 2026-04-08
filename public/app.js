@@ -147,33 +147,132 @@ function renderEntradas(){
   if(m===cur())renderPrevSugestoes();
 }
 function renderPrevSugestoes(){
-  var m=cur(),prevs=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
+  var m=cur();
+  var prevs=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
   var el=g('pv-sugestao');if(!el)return;
   if(!prevs.length){el.innerHTML='';return;}
+
+  // O FOCO É DISTRIBUIR ESTE DINHEIRO ESPECÍFICO
   var total=prevs.reduce(function(s,e){return s+e.valor;},0);
-  var ci=cycleInfo();
-  var tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
-  var tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
-  var tDi=diario.filter(function(d){return mk(d.data)===m;}).reduce(function(s,d){return s+d.valor;},0);
-  var saldoAtual=tIn-tD-tDi;
-  var diasPassados=Math.max(ci.totalDays-ci.daysLeft,1);
-  var gastoDiario=tDi/diasPassados;
-  var estimDiarios=gastoDiario*ci.daysLeft;
-  var sug=[];
-  if(ci.daysLeft>0){sug.push({icon:'📅',bg:'var(--blue-bg)',cor:'var(--blue-t)',txt:'Faltam <strong>'+ci.daysLeft+' dias</strong> para o dia 5. O teu saldo actual é <strong>'+fmt(saldoAtual)+'</strong>.'+(gastoDiario>0?' Gastas em média '+fmt(Math.round(gastoDiario))+'€/dia em gastos variáveis.':'')});}
-  var objsPend=objetivos.filter(function(o){return Math.max(o.meta-(o.atual||0),0)>0;}).sort(function(a,b){return(a.meta-(a.atual||0))-(b.meta-(b.atual||0));});
-  if(objsPend.length>0){var obj=objsPend[0],rest=Math.max(obj.meta-(obj.atual||0),0),contrib=Math.min(total*0.35,rest);if(rest<=total){sug.push({icon:'🏆',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Podes <strong>terminar já</strong> o objetivo "'+obj.nome+'" com <strong>'+fmt(rest)+'</strong>!'});}else if(contrib>0){sug.push({icon:'🎯',bg:'var(--green-bg)',cor:'var(--green-t)',txt:'Mete <strong>'+fmt(Math.round(contrib))+'</strong> no objetivo "'+obj.nome+'" — faltam '+fmt(rest)+'.'});}}
-  sug.push({icon:'🏦',bg:'var(--surface2)',cor:'var(--t2)',txt:'Guarda pelo menos <strong>'+fmt(Math.round(total*0.15))+'</strong> como almofada para imprevistos.'});
-  var notasMes=notas.filter(function(n){return n.tipo==='mes';}).map(function(n){return n.texto;}).join('; ');
-  if(notasMes)sug.push({icon:'📌',bg:'var(--surface2)',cor:'var(--t2)',txt:'Notas próximo mês: <em>'+notasMes.slice(0,90)+'...</em>'});
+  var restante=total; // vai diminuindo conforme alocamos
+
+  var linhas=[];
+
+  // 1. Objetivos - ordenados por menor valor em falta (mais fácil de fechar primeiro)
+  var objsPend=objetivos
+    .filter(function(o){return Math.max(o.meta-(o.atual||0),0)>0;})
+    .sort(function(a,b){return(a.meta-(a.atual||0))-(b.meta-(b.atual||0));});
+
+  objsPend.forEach(function(obj){
+    if(restante<=0)return;
+    var falta=Math.max(obj.meta-(obj.atual||0),0);
+    if(falta<=0)return;
+    if(falta<=restante){
+      // Pode fechar já este objetivo!
+      linhas.push({
+        icon:'🏆',bg:'var(--green-bg)',cor:'var(--green-t)',
+        valor:falta,
+        txt:'<strong>'+fmt(falta)+'</strong> → fechar já o objetivo "<strong>'+obj.nome+'</strong>" (meta atingida! 🎉)'
+      });
+      restante-=falta;
+    } else {
+      // Contribuição parcial (max 30% do total por objetivo)
+      var contrib=Math.min(Math.round(total*0.30),restante);
+      if(contrib>50){
+        linhas.push({
+          icon:'🎯',bg:'var(--green-bg)',cor:'var(--green-t)',
+          valor:contrib,
+          txt:'<strong>'+fmt(contrib)+'</strong> → objetivo "<strong>'+obj.nome+'</strong>" (ficam a faltar '+fmt(falta-contrib)+')'
+        });
+        restante-=contrib;
+      }
+    }
+  });
+
+  // 2. Levanta em dinheiro para ter em casa (gastos imprevistos do ciclo)
+  if(restante>0){
+    var paraLevanter=Math.min(Math.round(restante*0.25),Math.round(total*0.20));
+    if(paraLevanter>=20){
+      linhas.push({
+        icon:'💵',bg:'var(--amber-bg)',cor:'var(--amber-t)',
+        valor:paraLevanter,
+        txt:'<strong>'+fmt(paraLevanter)+'</strong> → levanta em dinheiro e guarda em casa para imprevistos do dia a dia'
+      });
+      restante-=paraLevanter;
+    }
+  }
+
+  // 3. Guardar para o próximo mês
+  if(restante>0){
+    var paraProxMes=Math.min(Math.round(restante*0.40),Math.round(total*0.30));
+    if(paraProxMes>=20){
+      linhas.push({
+        icon:'📆',bg:'var(--blue-bg)',cor:'var(--blue-t)',
+        valor:paraProxMes,
+        txt:'<strong>'+fmt(paraProxMes)+'</strong> → guarda para o próximo mês (não toques — é a tua almofada para o dia 5 seguinte)'
+      });
+      restante-=paraProxMes;
+    }
+  }
+
+  // 4. Desejos - se sobrar alguma coisa confortável
+  if(restante>50){
+    var order={alta:0,media:1,baixa:2};
+    var melhorDesejo=[...desejos]
+      .filter(function(w){return !w.comprado&&w.preco<=restante*0.8;})
+      .sort(function(a,b){return order[a.prio]-order[b.prio];})[0];
+    if(melhorDesejo){
+      linhas.push({
+        icon:'🛍',bg:'var(--surface2)',cor:'var(--t2)',
+        valor:melhorDesejo.preco,
+        txt:'<strong>'+fmt(melhorDesejo.preco)+'</strong> → podes comprar "<strong>'+melhorDesejo.nome+'</strong>" da lista de desejos (maior prioridade que cabe)'
+      });
+      restante-=melhorDesejo.preco;
+    }
+  }
+
+  // 5. O que sobra — reserva imprevistos
+  if(restante>0){
+    linhas.push({
+      icon:'🏦',bg:'var(--surface2)',cor:'var(--t2)',
+      valor:restante,
+      txt:'<strong>'+fmt(Math.round(restante))+'</strong> → guarda como reserva de imprevistos (não toques)'
+    });
+  }
+
+  // Notas do próximo mês
+  var notasMes=notas.filter(function(n){return n.tipo==='mes';}).map(function(n){return n.texto;}).join(' · ');
+
   var notaExist=notas.find(function(n){return n.tipo==='prevista'&&n.mes===m;});
-  el.innerHTML='<div class="ai-box" style="margin-top:.7rem;"><div class="ai-title">Como distribuir os '+fmt(total)+' previstos</div>'
-    +'<div style="display:flex;flex-direction:column;gap:7px;margin:.5rem 0;">'
-    +sug.map(function(s){return'<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:6px;background:'+s.bg+';font-size:13px;color:'+s.cor+';line-height:1.5;"><span style="flex-shrink:0;">'+s.icon+'</span><span>'+s.txt+'</span></div>';}).join('')
-    +'</div><hr style="margin:.5rem 0;border:none;border-top:.5px solid var(--border);">'
-    +'<label style="font-size:12px;color:var(--amber-t);font-weight:600;">A tua nota sobre este dinheiro</label>'
-    +'<textarea id="pv-nota-pessoal" placeholder="Escreve o que queres fazer com este dinheiro..." style="margin-top:5px;font-size:13px;min-height:55px;">'+(notaExist?notaExist.texto:'')+'</textarea>'
-    +'<button class="btn ba bsm" style="margin-top:5px;" onclick="saveNotaPrevista()">Guardar nota</button></div>';
+
+  // Build HTML
+  var totalAlocado=linhas.reduce(function(s,l){return s+(l.valor||0);},0);
+
+  el.innerHTML='<div class="ai-box" style="margin-top:.7rem;">'
+    +'<div class="ai-title">Como distribuir os '+fmt(total)+'</div>'
+    +'<div style="font-size:12px;color:var(--amber-t);margin-bottom:.6rem;">Proposta de distribuição — ajusta conforme a tua situação</div>'
+    // Table-style layout
+    +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:.7rem;">'
+    +linhas.map(function(l,i){
+      var pct=total>0?Math.round((l.valor/total)*100):0;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:'+l.bg+';font-size:13px;color:'+l.cor+';">'
+        +'<span style="flex-shrink:0;font-size:16px;">'+l.icon+'</span>'
+        +'<span style="flex:1;line-height:1.5;">'+l.txt+'</span>'
+        +'<span style="flex-shrink:0;font-size:11px;opacity:.6;">'+pct+'%</span>'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    // Total check
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:.6rem;">'
+    +'<span>Total alocado</span><strong>'+fmt(Math.round(totalAlocado))+' de '+fmt(total)+'</strong>'
+    +'</div>'
+    // Notas do próximo mês
+    +(notasMes?'<div style="font-size:12px;color:var(--t2);padding:6px 0;">📌 Notas próximo mês: <em>'+notasMes.slice(0,120)+'</em></div>':'')
+    +'<hr style="margin:.6rem 0;border:none;border-top:.5px solid var(--border);">'
+    +'<label style="font-size:12px;color:var(--amber-t);font-weight:600;">A tua decisão sobre este dinheiro</label>'
+    +'<textarea id="pv-nota-pessoal" placeholder="Ex: 300€ para o objetivo, 200€ para a conta, 400€ para o próximo mês..." style="margin-top:5px;font-size:13px;min-height:60px;">'+(notaExist?notaExist.texto:'')+'</textarea>'
+    +'<button class="btn ba bsm" style="margin-top:5px;" onclick="saveNotaPrevista()">Guardar decisão</button>'
+    +'</div>';
 }
 function saveNotaPrevista(){var m=cur(),txt=g('pv-nota-pessoal')?g('pv-nota-pessoal').value.trim():'';notas=notas.filter(function(n){return!(n.tipo==='prevista'&&n.mes===m);});if(txt)notas.push({id:uid(),tipo:'prevista',mes:m,texto:txt,data:today()});saveAll();}
 
