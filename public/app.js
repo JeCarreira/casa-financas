@@ -211,17 +211,14 @@ function addDesp(){
   var desc=g('da-d').value.trim(),val=parseFloat(g('da-v').value),cat=g('da-c').value,data=g('da-dt').value||today();
   if(!desc||!val||val<=0){alert('Preenche descrição e valor.');return;}
   var rec=g('da-rec')&&g('da-rec').checked;
-  var tipo=rec?'fixa':'pontual';
-  despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:data,tipo:tipo,pago:false,recorrente:rec});
-  // If recorrente, project to next 5 months
+  despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:data,tipo:rec?'fixa':'pontual',pago:false,recorrente:rec});
   if(rec){
     var bM=mk(data),bD=data.slice(8,10);
     for(var i=1;i<=5;i++){
       var nd=new Date(parseInt(bM.slice(0,4)),parseInt(bM.slice(5,7))-1+i,parseInt(bD));
       var fM=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
-      var futData=fM+'-'+bD;
       if(!despesas.some(function(d){return d.desc===desc&&mk(d.data)===fM&&d.recorrente;})){
-        despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:futData,tipo:'fixa',pago:false,recorrente:true,projetada:true});
+        despesas.push({id:uid(),desc:desc,valor:val,cat:cat,data:fM+'-'+bD,tipo:'fixa',pago:false,recorrente:true,projetada:true});
       }
     }
   }
