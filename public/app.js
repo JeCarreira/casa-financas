@@ -279,13 +279,78 @@ function saveNotaPrevista(){var m=cur(),txt=g('pv-nota-pessoal')?g('pv-nota-pess
 // TEMPLATE
 function renderTpl(){
   var el=g('tpl-list');if(!el)return;
-  if(!templates.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);">Sem rubricas.</div>';return;}
-  el.innerHTML=templates.map(function(t){return'<div class="tpl-item" style="background:'+(t.ativo!==false?'var(--surface)':'var(--surface2)')+';">'
-    +'<input type="checkbox" '+(t.ativo!==false?'checked':'')+' onchange="tplChk(\''+t.id+'\',this.checked)" style="width:16px;flex-shrink:0;cursor:pointer;accent-color:var(--accent);">'
-    +dot(t.cat,10)+'<span style="flex:1;font-size:13px;'+(t.ativo===false?'color:var(--t3);':'')+'">'+t.nome+(t.recorrente?'<span style="font-size:10px;color:var(--green-t);margin-left:5px;">↻</span>':'')+'</span>'
-    +'<span style="font-size:10px;color:var(--t3);margin-right:3px;">dia</span><input type="number" value="'+(t.dia||1)+'" min="1" max="28" onchange="tplDia(\''+t.id+'\',this.value)" style="width:34px;background:transparent;border:none;border-bottom:1px dashed var(--border2);border-radius:0;padding:2px;font-size:12px;text-align:center;color:var(--t);">'
-    +'<input type="number" value="'+t.valor+'" onchange="tplVal(\''+t.id+'\',this.value)" style="width:68px;background:transparent;border:none;border-bottom:1px dashed var(--border2);border-radius:0;padding:2px 4px;font-size:13px;text-align:right;color:var(--t);margin-left:4px;"> €'
-    +'<button class="btn bd bxs" onclick="delTpl(\''+t.id+'\')">×</button></div>';}).join('');
+  if(!templates.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--t3);text-align:center;padding:1rem 0;">Sem despesas fixas. Clica "+ Nova despesa fixa" para adicionar.</div>';
+    return;
+  }
+  var total=templates.filter(function(t){return t.ativo!==false;}).reduce(function(s,t){return s+t.valor;},0);
+  // Group by category
+  var byCat={};
+  templates.forEach(function(t){
+    var c=t.cat||'Outro';
+    byCat[c]=byCat[c]||[];
+    byCat[c].push(t);
+  });
+  var html='<div style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Total mensal: <strong>'+fmt(total)+'</strong> · Clica numa despesa para editar</div>';
+  Object.entries(byCat).forEach(function(entry){
+    var cat=entry[0],items=entry[1];
+    var catTotal=items.filter(function(t){return t.ativo!==false;}).reduce(function(s,t){return s+t.valor;},0);
+    html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:7px 0 4px;border-top:.5px solid var(--border);display:flex;align-items:center;gap:5px;">'+dot(cat,8)+'<span>'+cat+'</span><span style="margin-left:auto;font-weight:400;font-size:12px;">'+fmt(catTotal)+'</span></div>';
+    html+=items.map(function(t){
+      var inativo=t.ativo===false;
+      var bg=inativo?'var(--surface2)':'var(--surface)';
+      return '<div class="tpl-row" onclick="openTplEdit(\'' + t.id + '\')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:3px;cursor:pointer;background:' + bg + ';border:1px solid var(--border);">'
+        +'<div style="width:10px;height:10px;border-radius:50%;background:'+(inativo?'#ccc':'var(--green)')+';flex-shrink:0;"></div>'
+        +'<span style="flex:1;font-size:13px;'+(inativo?'color:var(--t3);text-decoration:line-through;':'')+'">'
+        +t.nome
+        +(t.recorrente?'<span style="font-size:10px;color:var(--green-t);margin-left:5px;background:var(--green-bg);padding:1px 5px;border-radius:99px;">↻ mensal</span>':'')
+        +'</span>'
+        +'<span style="font-size:13px;font-weight:500;color:'+(inativo?'var(--t3)':'var(--t)')+';">'+fmt(t.valor)+'</span>'
+        +'<span style="font-size:11px;color:var(--t3);">dia '+( t.dia||1)+'</span>'
+        +'</div>';
+    }).join('');
+  });
+  el.innerHTML=html;
+}
+
+var EDIT_TPL_ID='';
+function openTplEdit(id){
+  var t=templates.find(function(x){return x.id===id;});
+  if(!t)return;
+  EDIT_TPL_ID=id;
+  g('me-title').textContent='Editar: '+t.nome;
+  var cats=['Habitação','Alimentação','Transportes','Filhos','Saúde','Lazer','Serviços','Vestuário','Outro'];
+  var catOpts=cats.map(function(c){return '<option'+(t.cat===c?' selected':'')+'>'+c+'</option>';}).join('');
+  g('me-body').innerHTML=
+    '<div class="fr"><div class="fg"><label>Nome</label><input id="te-nome" value="'+t.nome+'"></div></div>'
+    +'<div class="fr"><div class="fg"><label>Valor (€)</label><input id="te-val" type="number" value="'+t.valor+'" step="0.01"></div>'
+    +'<div class="fg"><label>Dia do mês</label><input id="te-dia" type="number" value="'+(t.dia||1)+'" min="1" max="28"></div></div>'
+    +'<div class="fr"><div class="fg"><label>Categoria</label><select id="te-cat">'+catOpts+'</select></div></div>'
+    +'<div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">'
+    +'<input id="te-rec" type="checkbox" '+(t.recorrente?'checked':'')+' style="width:16px;accent-color:var(--accent);cursor:pointer;"> ↻ Recorrente todos os meses</label></div>'
+    +'<div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">'
+    +'<input id="te-ativo" type="checkbox" '+(t.ativo!==false?'checked':'')+' style="width:16px;accent-color:var(--accent);cursor:pointer;"> Activa (incluir quando aplicar ao mês)</label></div>'
+    +'<div style="display:flex;gap:8px;margin-top:.7rem;">'
+    +'<button class="btn ba" style="flex:1;" onclick="saveTplEdit()">Guardar</button>'
+    +'<button class="btn bd" onclick="delTplAndClose()">Eliminar</button>'
+    +'</div>'
+    +'<div class="alert alb" style="margin-top:.7rem;font-size:12px;">Dia '+(t.dia||1)+' de cada mês'+(t.recorrente?' · projeta para os próximos meses':'')+'. Para mudar só num mês específico, edita directamente nas Despesas.</div>';
+  openM('m-obj-edit');
+}
+function saveTplEdit(){
+  var t=templates.find(function(x){return x.id===EDIT_TPL_ID;});
+  if(!t)return;
+  t.nome=g('te-nome').value.trim()||t.nome;
+  t.valor=parseFloat(g('te-val').value)||t.valor;
+  t.dia=parseInt(g('te-dia').value)||1;
+  t.cat=g('te-cat').value;
+  t.recorrente=g('te-rec').checked;
+  t.ativo=g('te-ativo').checked;
+  saveAll();renderTpl();closeM('m-obj-edit');
+}
+function delTplAndClose(){
+  templates=templates.filter(function(t){return t.id!==EDIT_TPL_ID;});
+  saveAll();renderTpl();closeM('m-obj-edit');
 }
 function tplChk(id,v){var t=templates.find(function(x){return x.id===id;});if(t)t.ativo=v;renderTpl();saveAll();}
 function tplVal(id,v){var t=templates.find(function(x){return x.id===id;});if(t)t.valor=parseFloat(v)||0;saveAll();}
