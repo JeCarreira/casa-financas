@@ -1,7 +1,7 @@
 'use strict';
 var API='/api',USER_KEY='',LS_KEY='';
 var entradas=[],despesas=[],diario=[],objetivos=[],desejos=[],templates=[],desafios=[],notas=[];
-var bocaData=[],bocaConfig={total:0},rendaData=[];
+var bocaData=[],bocaConfig={total:0},rendaData=[],reservasData=[];
 var NAV_OPEN=false,MENTOR_HISTORY=[];
 var CAT={'Habitação':'#1B4F72','Alimentação':'#1E6348','Transportes':'#7A4A0A','Filhos':'#3D2580','Saúde':'#8B1F1F','Lazer':'#0E5E5E','Serviços':'#4A3A6B','Vestuário':'#5C3D1E','Café / Bar':'#6B4226','Gasolina':'#4A3A0A','Compras':'#1A4A1A','Criança':'#3D2580','Farmácia':'#8B1F1F','Outro':'#5C5C5C'};
 function g(id){return document.getElementById(id);}
@@ -27,7 +27,7 @@ function defaultTpl(){return[{id:'t1',nome:'Renda',valor:700,cat:'Habitação',a
 
 function lsSave(){if(!LS_KEY)return;var s=JSON.stringify(getData());try{localStorage.setItem(LS_KEY,s);}catch(e){}try{sessionStorage.setItem(LS_KEY,s);}catch(e){}try{localStorage.setItem(LS_KEY+'_boca',JSON.stringify({data:bocaData,config:bocaConfig}));}catch(e){}try{localStorage.setItem(LS_KEY+'_renda',JSON.stringify(rendaData));}catch(e){}}
 function lsLoad(){if(!LS_KEY)return null;try{var r=localStorage.getItem(LS_KEY)||sessionStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
-function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r){var rd=JSON.parse(r);rendaData=Array.isArray(rd)?rd:(rd.data||[]);}}catch(e){}}
+function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r){var rd=JSON.parse(r);rendaData=Array.isArray(rd)?rd:(rd.data||[]);}}catch(e){}try{var rv=localStorage.getItem(LS_KEY+'_reservas');if(rv)reservasData=JSON.parse(rv);}catch(e){}}
 function setSS(s){var d=g('sync-dot'),l=g('sync-lbl');if(!d)return;d.className='dot'+(s==='syncing'?' syncing':s==='error'?' error':'');if(l)l.textContent=s==='syncing'?'a guardar...':s==='error'?'local':'guardado';}
 function saveAll(){
   if(!USER_KEY)return;
@@ -35,6 +35,7 @@ function saveAll(){
   fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY,data:getData()})}).then(function(r){setSS(r.ok?'saved':'error');}).catch(function(){setSS('error');});
   fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca',data:{data:bocaData,config:bocaConfig}})}).catch(function(){});
   fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda',data:rendaData})}).catch(function(){});
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'reservas',data:reservasData})}).catch(function(){});
 }
 function loadAndStart(){
   var local=lsLoad();
@@ -90,7 +91,7 @@ function toggleNav(){
 }
 document.addEventListener('click',function(e){if(!NAV_OPEN)return;if(!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){NAV_OPEN=false;var m=g('mobile-menu');if(m)m.className='mobile-menu-closed';var b=document.querySelector('.hamburger-btn');if(b)b.className='hamburger-btn';}});
 
-var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal'};
+var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
@@ -110,6 +111,7 @@ function go(page){
   else if(page==='mentor')renderMentorSugs();
   else if(page==='boca'){setMI('boca-mes');renderBoca();}
   else if(page==='renda'){setMI('renda-mes');renderRenda();}
+  else if(page==='reservas')renderReservas();
 }
 function reRender(){populateSels();var a=document.querySelector('.page.on');if(!a)return;go(a.id.replace('page-',''));}
 function openM(id){g(id).classList.add('on');}
@@ -517,6 +519,127 @@ function renderResumo(){
   var oH=objetivos.length?objetivos.map(function(obj){var pct=obj.meta>0?Math.min(Math.round(((obj.atual||0)/obj.meta)*100),100):0;return'<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><span>'+obj.nome+'</span><span class="pill '+(pct>=100?'pg':pct>=50?'pb':'pa')+'">'+pct+'%</span></div><div class="pbar"><div class="pfill" style="width:'+pct+'%;background:'+(pct>=100?'var(--green)':pct>=50?'#1A3F6F':'var(--accent)')+';"></div></div><div style="font-size:12px;color:var(--t3);margin-top:2px;">'+fmt(obj.atual||0)+' de '+fmt(obj.meta)+(obj.prazo?' · '+obj.prazo:'')+'</div></div>';}).join(''):'<div style="font-size:13px;color:var(--t3);">Sem objetivos.</div>';if(g('r-objs'))g('r-objs').innerHTML=oH;
   var ci3=cycleInfo(),mg3=saldo>=200&&ci3.daysLeft>10?Math.max(saldo-200,0)*0.3:0,pend=desejos.filter(function(d){return!d.comprado;}),wH='';if(!pend.length)wH='<div style="font-size:13px;color:var(--t3);">Sem itens.</div>';else if(mg3<=0)wH='<div class="alert ala">Faltam '+ci3.daysLeft+' dias e saldo é '+fmt(saldo)+'. Adia as compras.</div>';else{var order3={alta:0,media:1,baixa:2},m3=[...pend].sort(function(a,b){return order3[a.prio]-order3[b.prio];}).find(function(w){return w.preco<=mg3;});wH=m3?'<div class="alert alg">Com margem de '+fmt(mg3)+' podes considerar: <strong>'+m3.nome+'</strong> ('+fmt(m3.preco)+').</div>':'<div class="alert ala">Nenhum item cabe na margem segura ('+fmt(mg3)+').</div>';}if(g('r-wishes'))g('r-wishes').innerHTML=wH;
   renderNotas();
+}
+
+
+// ===== RESERVAS & POUPANÇAS =====
+var EDIT_RES_ID='';
+
+function addReserva(){
+  var nome=g('res-nome').value.trim(),meta=parseFloat(g('res-meta').value)||0;
+  if(!nome||!meta){alert('Preenche o nome e o valor da meta.');return;}
+  var atual=parseFloat(g('res-atual').value)||0;
+  reservasData.push({
+    id:uid(),nome:nome,meta:meta,atual:atual,
+    prazo:g('res-prazo').value||'',
+    historico:[],criado:today()
+  });
+  g('res-nome').value='';g('res-meta').value='';g('res-atual').value='';g('res-prazo').value='';
+  saveAll();renderReservas();
+}
+
+function openReservaEdit(id){
+  var r=reservasData.find(function(x){return x.id===id;});
+  if(!r)return;
+  EDIT_RES_ID=id;
+  g('me-title').textContent=r.nome;
+  var pct=r.meta>0?Math.min(Math.round((r.atual/r.meta)*100),100):0;
+  var falta=Math.max(r.meta-r.atual,0);
+  g('me-body').innerHTML=
+    // Progress bar no topo
+    '<div style="margin-bottom:1rem;">'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span>'+fmt(r.atual)+' guardados</span><span style="color:var(--t3);">faltam '+fmt(falta)+'</span></div>'
+    +'<div class="pbar" style="height:14px;"><div class="pfill" style="width:'+pct+'%;background:'+(pct>=100?'var(--green)':'var(--accent)')+'"></div></div>'
+    +'<div style="text-align:center;font-size:12px;color:var(--t2);margin-top:4px;">'+pct+'% de '+fmt(r.meta)+(r.prazo?' · prazo: '+r.prazo:'')+'</div>'
+    +'</div>'
+    // Adicionar/retirar dinheiro
+    +'<div class="ct">Actualizar valor guardado</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:.7rem;">'
+    +'<input id="re-val" type="number" placeholder="valor (€)" style="flex:1;">'
+    +"<button class=\"btn bg bsm\" onclick=\"resOp('add')\">+ Guardei</button>"
+    +"<button class=\"btn bg bsm\" onclick=\"resOp('sub')\">− Gastei</button>"
+    +'</div>'
+    // Historico
+    +(r.historico&&r.historico.length?
+      '<div style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Últimos movimentos:<br>'
+      +r.historico.slice(-5).reverse().map(function(h){
+        var hcol=h.delta>0?'var(--green)':'var(--red)';
+        return '<span style="color:'+hcol+';margin-right:8px;">'+(h.delta>0?'+':'')+fmt(h.delta)+' em '+h.data+'</span>';
+      }).join('<br>')+'</div>'
+      :'')
+    +'<hr style="margin:.7rem 0;">'
+    // Editar nome/meta
+    +'<div class="fr"><div class="fg"><label>Nome</label><input id="re-nome" value="'+r.nome+'"></div></div>'
+    +'<div class="fr"><div class="fg"><label>Meta (€)</label><input id="re-meta" type="number" value="'+r.meta+'" step="0.01"></div>'
+    +'<div class="fg"><label>Prazo</label><input id="re-prazo" type="date" value="'+(r.prazo||'')+'"></div></div>'
+    +'<div style="display:flex;gap:8px;margin-top:.5rem;">'
+    +'<button class="btn ba" style="flex:1;" onclick="saveReservaEdit()">Guardar alterações</button>'
+    +'<button class="btn bd" onclick="delReservaAndClose()">Eliminar</button>'
+    +'</div>';
+  openM('m-obj-edit');
+}
+
+function resOp(tipo){
+  var r=reservasData.find(function(x){return x.id===EDIT_RES_ID;});
+  if(!r)return;
+  var val=parseFloat(g('re-val').value)||0;
+  if(val<=0){alert('Insere um valor.');return;}
+  var delta=tipo==='add'?val:-val;
+  r.atual=Math.max(0,(r.atual||0)+delta);
+  r.historico=r.historico||[];
+  r.historico.push({data:today(),delta:delta});
+  saveAll();openReservaEdit(EDIT_RES_ID);renderReservas();
+}
+
+function saveReservaEdit(){
+  var r=reservasData.find(function(x){return x.id===EDIT_RES_ID;});
+  if(!r)return;
+  r.nome=g('re-nome').value.trim()||r.nome;
+  r.meta=parseFloat(g('re-meta').value)||r.meta;
+  r.prazo=g('re-prazo').value||'';
+  saveAll();renderReservas();closeM('m-obj-edit');
+}
+
+function delReservaAndClose(){
+  reservasData=reservasData.filter(function(x){return x.id!==EDIT_RES_ID;});
+  saveAll();renderReservas();closeM('m-obj-edit');
+}
+
+function renderReservas(){
+  var el=g('lst-reservas');if(!el)return;
+  if(!reservasData.length){
+    el.innerHTML='<div class="card"><div style="font-size:13px;color:var(--t3);text-align:center;padding:1rem 0;">Sem reservas ainda.<br>Cria a primeira — ex: "Inspecção do carro" com meta 200€.</div></div>';
+    return;
+  }
+  var totalGuardado=reservasData.reduce(function(s,r){return s+(r.atual||0);},0);
+  var totalMeta=reservasData.reduce(function(s,r){return s+r.meta;},0);
+  var sumHTML='<div class="card" style="margin-bottom:.7rem;background:var(--surface2);"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Total guardado</span><strong>'+fmt(totalGuardado)+'</strong></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);"><span>Total das metas</span><span>'+fmt(totalMeta)+'</span></div></div>';
+  var cardsHTML=reservasData.map(function(r){
+    var pct=r.meta>0?Math.min(Math.round(((r.atual||0)/r.meta)*100),100):0;
+    var falta=Math.max(r.meta-(r.atual||0),0);
+    var concluida=pct>=100;
+    var barColor=concluida?'var(--green)':pct>=50?'var(--accent)':'var(--amber)';
+    var borderColor=concluida?'var(--green)':'var(--border)';
+    var prazoInfo='';
+    if(r.prazo&&!concluida){
+      var diasP=Math.ceil((new Date(r.prazo)-new Date())/(1000*60*60*24));
+      if(diasP>0){var porDia=Math.ceil(falta/diasP);prazoInfo='<div style="font-size:12px;color:var(--t2);margin-top:3px;">'+diasP+' dias · guarda '+fmt(porDia)+'/dia para chegar a tempo</div>';}
+      else{prazoInfo='<div style="font-size:12px;color:var(--red-t);margin-top:3px;">Prazo ultrapassado!</div>';}
+    }
+    var html='<div data-resid="'+r.id+'" style="background:var(--surface);border:2px solid '+borderColor+';border-radius:var(--rlg);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;" onclick="openReservaEdit(this.getAttribute(\"data-resid\"))">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">';
+    html+='<div style="font-size:15px;font-weight:500;">'+(concluida?'✅ ':'')+r.nome+'</div>';
+    html+='<span class="pill '+(concluida?'pg':pct>=50?'pb':'pa')+'">'+pct+'%</span></div>';
+    html+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">';
+    html+='<span style="color:var(--green-t);font-weight:500;">'+fmt(r.atual||0)+' guardados</span>';
+    html+='<span style="color:var(--t3);">'+(concluida?'🎉 Meta atingida!':'falta '+fmt(falta))+'</span></div>';
+    html+='<div class="pbar" style="height:8px;margin-bottom:4px;"><div class="pfill" style="width:'+pct+'%;background:'+barColor+';"></div></div>';
+    html+=prazoInfo;
+    html+='<div style="font-size:12px;color:var(--t3);margin-top:4px;">Meta: '+fmt(r.meta)+(r.prazo?' · prazo: '+r.prazo:'')+'</div>';
+    html+='</div>';
+    return html;
+  }).join('');
+  el.innerHTML=sumHTML+cardsHTML;
 }
 
 // CASA PORTUGAL
