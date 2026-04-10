@@ -1,8 +1,13 @@
 {
-  "rewrites": [
-    { "source": "/api/save", "destination": "/api/save.js" },
-    { "source": "/api/load", "destination": "/api/load.js" },
-    { "source": "/api/mentor", "destination": "/api/mentor.js" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+  "version": 2,
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" },
+    { "src": "api/*.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/save", "dest": "/api/save.js" },
+    { "src": "/api/load", "dest": "/api/load.js" },
+    { "src": "/api/mentor", "dest": "/api/mentor.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
