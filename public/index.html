@@ -30,26 +30,40 @@
 <!-- APP -->
 <div id="app">
 
-<!-- DESKTOP NAV -->
-<nav class="nav-desktop">
-  <div class="brand">casa<span>&</span>finanças</div>
-  <div style="display:flex;align-items:center;gap:6px;overflow-x:auto;">
-    <button class="tab on" onclick="go('resumo')">Resumo</button>
-    <button class="tab" onclick="go('entradas')">Entradas</button>
-    <button class="tab" onclick="go('despesas')">Despesas</button>
-    <button class="tab" onclick="go('diario')">Diário</button>
-    <button class="tab" onclick="go('objetivos')">Objetivos</button>
-    <button class="tab" onclick="go('desafios')">Desafios</button>
-    <button class="tab" onclick="go('desejos')">Desejos</button>
-    <button class="tab" onclick="go('mentor')">Mentor IA</button>
-    <button class="tab" onclick="go('investir')">Investir</button>
-    <button class="tab" onclick="go('dicas')">Dicas</button>
-    <button class="tab" onclick="go('boca')">Casa Portugal</button>
-    <button class="tab" onclick="go('renda')">Renda Portugal</button>
-    <button class="tab" onclick="go('reservas')">Reservas</button>
-  </div>
-  <div class="sync-ind"><div class="dot" id="sync-dot"></div><span id="sync-lbl">guardado</span></div>
-</nav>
+<!-- DESKTOP NAV - sidebar -->
+<div class="layout-wrap">
+<aside class="sidebar">
+  <div class="brand" style="padding:1.2rem 1rem .8rem;">casa<span>&</span>finanças</div>
+  <div class="sync-ind" style="padding:0 1rem .8rem;border-bottom:1px solid var(--border);margin-bottom:.5rem;"><div class="dot" id="sync-dot"></div><span id="sync-lbl" style="font-size:11px;">guardado</span></div>
+  <nav class="sidenav">
+    <div class="snav-group">
+      <div class="snav-label">Principal</div>
+      <button class="tab on" onclick="go('resumo')">📊 Resumo</button>
+      <button class="tab" onclick="go('entradas')">💰 Entradas</button>
+      <button class="tab" onclick="go('despesas')">🧾 Despesas</button>
+      <button class="tab" onclick="go('diario')">📝 Diário</button>
+    </div>
+    <div class="snav-group">
+      <div class="snav-label">Planeamento</div>
+      <button class="tab" onclick="go('objetivos')">🎯 Objetivos</button>
+      <button class="tab" onclick="go('reservas')">🐷 Reservas</button>
+      <button class="tab" onclick="go('desejos')">🛍 Desejos</button>
+      <button class="tab" onclick="go('desafios')">🏆 Desafios</button>
+    </div>
+    <div class="snav-group">
+      <div class="snav-label">Aprender</div>
+      <button class="tab" onclick="go('mentor')">🤖 Mentor IA</button>
+      <button class="tab" onclick="go('investir')">📈 Investir</button>
+      <button class="tab" onclick="go('dicas')">💡 Dicas</button>
+    </div>
+    <div class="snav-group">
+      <div class="snav-label">Portugal</div>
+      <button class="tab" onclick="go('boca')">🏠 Casa Portugal</button>
+      <button class="tab" onclick="go('renda')">💶 Renda Portugal</button>
+    </div>
+  </nav>
+</aside>
+<div class="main-content">
 
 <!-- MOBILE NAV -->
 <nav class="nav-mobile">
