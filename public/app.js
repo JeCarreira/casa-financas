@@ -441,6 +441,24 @@ function delObj(id){objetivos=objetivos.filter(function(o){return o.id!==id;});s
 function openObjEdit(id){var obj=objetivos.find(function(o){return o.id===id;});if(!obj)return;g('me-title').textContent=obj.nome;g('me-body').innerHTML='<div class="fr"><div class="fg"><label>Poupado (€)</label><input id="oe-a" type="number" value="'+(obj.atual||0)+'" step="0.01"></div></div><div class="fr"><div class="fg"><label>Meta (€)</label><input id="oe-m" type="number" value="'+obj.meta+'"></div><div class="fg"><label>Mensal (€)</label><input id="oe-mn" type="number" value="'+(obj.mensal||0)+'"></div></div><div class="fr"><div class="fg"><label>Prazo</label><input id="oe-p" type="date" value="'+(obj.prazo||'')+'"></div></div><div class="fr"><div class="fg"><label>Notas</label><input id="oe-n" value="'+(obj.notas||'')+'"></div></div><button class="btn ba" style="width:100%;margin-top:.4rem;" onclick="saveObjEdit(\''+id+'\')">Guardar</button><hr style="margin:.7rem 0;"><p style="font-size:13px;font-weight:500;margin-bottom:.5rem;">Contribuição pontual</p><div style="display:flex;gap:6px;align-items:center;"><input id="oe-c" type="number" placeholder="ex: 50" style="flex:1;"><select id="oe-ct" style="width:auto;"><option value="add">+ Adicionar</option><option value="sub">− Retirar</option></select><button class="btn ba bsm" onclick="addContrib(\''+id+'\')">Registar</button></div>'+(obj.historico&&obj.historico.length?'<div style="margin-top:.7rem;font-size:12px;color:var(--t2);">Recentes: '+obj.historico.slice(-4).map(function(h){return h.data+': '+(h.delta>0?'+':'')+fmt(h.delta);}).join(' · ')+'</div>':'');openM('m-obj-edit');}
 function saveObjEdit(id){var obj=objetivos.find(function(o){return o.id===id;});if(!obj)return;obj.atual=parseFloat(g('oe-a').value)||0;obj.meta=parseFloat(g('oe-m').value)||obj.meta;obj.mensal=parseFloat(g('oe-mn').value)||0;obj.prazo=g('oe-p').value||obj.prazo;obj.notas=g('oe-n').value||obj.notas;saveAll();renderObjs();closeM('m-obj-edit');}
 function addContrib(id){var obj=objetivos.find(function(o){return o.id===id;});if(!obj)return;var val=parseFloat(g('oe-c').value)||0,tipo=g('oe-ct').value,delta=tipo==='add'?val:-val;obj.atual=Math.max(0,(obj.atual||0)+delta);obj.historico=obj.historico||[];obj.historico.push({data:today(),delta:delta});saveAll();openObjEdit(id);renderObjs();}
+
+function objParaDespesa(id){
+  var obj=objetivos.find(function(o){return o.id===id;});
+  if(!obj)return;
+  if(!obj.atual||obj.atual<=0){alert('Não há valor poupado neste objetivo para transferir.');return;}
+  var conf=confirm('Criar despesa de '+fmt(obj.atual)+' com o nome "'+obj.nome+'" nas despesas de hoje?\n\nO valor poupado no objetivo vai a zero.');
+  if(!conf)return;
+  // Create expense
+  despesas.push({id:uid(),desc:obj.nome+' (do objetivo)',valor:obj.atual,cat:'Outro',data:today(),tipo:'pontual',pago:false,doObjetivo:true});
+  // Reset objective poupado
+  obj.historico=obj.historico||[];
+  obj.historico.push({data:today(),delta:-obj.atual,nota:'Levado para despesas'});
+  obj.atual=0;
+  saveAll();
+  renderObjs();
+  alert('Despesa criada com '+fmt(despesas[despesas.length-1].valor)+'! Vai a Despesas para ver.');
+}
+
 function renderObjs(){var el=g('lst-objetivos');if(!el)return;if(!objetivos.length){el.innerHTML='<div class="card"><div style="font-size:13px;color:var(--t3);">Sem objetivos.</div></div>';return;}el.innerHTML=objetivos.map(function(obj){var pct=obj.meta>0?Math.min(Math.round(((obj.atual||0)/obj.meta)*100),100):0,rest=Math.max(obj.meta-(obj.atual||0),0),mr=obj.prazo?Math.max(0,Math.round((new Date(obj.prazo)-new Date())/(1000*60*60*24*30))):null,mn=mr&&mr>0?Math.ceil(rest/mr):null,ok=obj.mensal&&mn&&obj.mensal>=mn;return'<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:1.1rem 1.3rem;margin-bottom:9px;"><div style="display:flex;justify-content:space-between;margin-bottom:5px;"><div style="font-size:15px;font-weight:500;">'+obj.nome+'</div><span class="pill '+(pct>=100?'pg':pct>=50?'pb':'pa')+'">'+pct+'%</span></div><div style="font-size:12px;color:var(--t2);margin-bottom:7px;">'+fmt(obj.atual||0)+' de '+fmt(obj.meta)+' · Faltam '+fmt(rest)+(obj.prazo?' · '+obj.prazo:'')+'</div>'+(mr!==null?'<div class="alert '+(ok?'alg':'ala')+'" style="margin-bottom:6px;font-size:12px;padding:6px 10px;">'+(ok?'Poupança suficiente.':'Precisas de '+fmt(mn||0)+'/mês.')+'</div>':'')+'<div class="pbar" style="margin-bottom:9px;"><div class="pfill" style="width:'+pct+'%;background:'+(pct>=100?'var(--green)':pct>=50?'#1A3F6F':'var(--accent)')+'"></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn bg bsm" onclick="openObjEdit(\''+obj.id+'\')">Actualizar</button><button class="btn bd bsm" onclick="delObj(\''+obj.id+'\')">Eliminar</button></div></div>';}).join('');}
 
 // DESAFIOS
