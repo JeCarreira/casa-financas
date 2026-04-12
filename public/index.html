@@ -138,24 +138,31 @@
   <div class="page-hdr"><h1>Despesas</h1><select id="d-month" onchange="renderDesp()" style="width:auto;font-size:13px;padding:6px 10px;"></select></div>
   <p class="sub">Despesas fixas e pontuais.</p>
   <div class="card">
-    <div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas fixas e planeadas</div><div style="display:flex;gap:6px;"><button class="btn bg bsm" onclick="openM('m-addtpl')">+ Rubrica</button><button class="btn ba bsm" onclick="aplicarTpl()">Aplicar ao mês</button></div></div>
+    <div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas fixas</div><div style="display:flex;gap:6px;"><button class="btn bg bsm" onclick="openM('m-addtpl')">+ Rubrica</button><button class="btn ba bsm" onclick="aplicarTpl()">Aplicar ao mês</button></div></div>
     <p style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Marca as que se aplicam, ajusta valores e carrega "Aplicar ao mês".</p>
     <div id="tpl-list"></div>
   </div>
+  <!-- PLANEADAS -->
   <div class="card">
-    <div class="ct">Despesa pontual <span style="font-size:11px;font-weight:400;color:var(--t3);">— algo que só acontece de vez em quando</span></div>
-    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Farmácia, roupa..."></div><div class="fg"><label>Valor (€)</label><input id="da-v" type="number" placeholder="0"></div></div>
+    <div class="shdr">
+      <div>
+        <div class="ct" style="margin-bottom:2px;">Despesas planeadas do mês</div>
+        <p style="font-size:12px;color:var(--t2);">Estimativas e pontuais. Clica no valor para editar. Regista o que já gastaste em cada uma.</p>
+      </div>
+      <span id="d-total-pill" class="pill pr">0 €</span>
+    </div>
+    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Supermercado, Gasóleo, Farmácia..."></div><div class="fg"><label>Valor estimado (€)</label><input id="da-v" type="number" placeholder="0"></div></div>
     <div class="fr"><div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Animais</option><option>Escola</option><option>Beleza / Higiene</option><option>Tecnologia</option><option>Restaurante</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="da-dt" type="date"></div></div>
-    <div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input id="da-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Despesa recorrente (projeta para os próximos meses automaticamente)</label><div style="margin-left:auto;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
+    <div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input id="da-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Recorrente (projeta para os próximos meses)</label><div style="margin-left:auto;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
+    <div id="lst-despesas"></div>
   </div>
-  <div class="card"><div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas do mês</div><span id="d-total-pill" class="pill pr">0 €</span></div><div id="lst-despesas"></div></div>
 </div>
 
 <div class="page" id="page-diario">
   <h1>Diário de Gastos</h1>
   <p class="sub">Os pequenos gastos — são estes que fazem moça!</p>
   <div id="diar-alerts"></div>
-  <div class="card"><div class="ct">Registo rápido</div><div class="fr"><div class="fg" style="flex:2;"><label>O que foi?</label><input id="dr-d" placeholder="ex: Café, gasolina..."></div><div class="fg"><label>Valor (€)</label><input id="dr-v" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Categoria</label><select id="dr-c"><option>Alimentação</option><option>Café / Bar</option><option>Gasolina</option><option>Transportes</option><option>Farmácia</option><option>Saúde</option><option>Compras</option><option>Roupa</option><option>Lazer</option><option>Criança</option><option>Animais</option><option>Escola</option><option>Beleza / Higiene</option><option>Casa</option><option>Tecnologia</option><option>Restaurante</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="dr-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDiar()">+ Registar</button></div></div></div>
+  <div class="card"><div class="ct">Registo rápido</div><div class="fr"><div class="fg" style="flex:2;"><label>O que foi?</label><input id="dr-d" placeholder="ex: Café, gasolina..."></div><div class="fg"><label>Valor (€)</label><input id="dr-v" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Categoria</label><select id="dr-c"><option>Alimentação</option><option>Café / Bar</option><option>Gasóleo</option><option>Transportes</option><option>Farmácia</option><option>Saúde</option><option>Compras</option><option>Roupa</option><option>Lazer</option><option>Criança</option><option>Animais</option><option>Escola</option><option>Beleza / Higiene</option><option>Casa</option><option>Tecnologia</option><option>Restaurante</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="dr-dt" type="date"></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDiar()">+ Registar</button></div></div></div>
   <div class="card"><div class="shdr"><div class="ct" style="margin-bottom:0;">Histórico</div><span class="pill pr" id="dr-total-pill">0 €</span></div><div id="lst-diario"></div></div>
 </div>
 
