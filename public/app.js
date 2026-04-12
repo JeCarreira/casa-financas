@@ -1,7 +1,7 @@
 'use strict';
 var API='/api',USER_KEY='',LS_KEY='';
 var entradas=[],despesas=[],diario=[],objetivos=[],desejos=[],templates=[],desafios=[],notas=[];
-var bocaData=[],bocaConfig={total:0},rendaData=[],reservasData=[];
+var bocaData=[],bocaConfig={total:0},rendaData=[],reservasData=[],saldoAjuste=0;
 var NAV_OPEN=false,MENTOR_HISTORY=[];
 var CAT={'Habitação':'#1B4F72','Alimentação':'#1E6348','Transportes':'#7A4A0A','Filhos':'#3D2580','Saúde':'#8B1F1F','Lazer':'#0E5E5E','Serviços':'#4A3A6B','Vestuário':'#5C3D1E','Café / Bar':'#6B4226','Gasolina':'#4A3A0A','Compras':'#1A4A1A','Criança':'#3D2580','Farmácia':'#8B1F1F','Outro':'#5C5C5C'};
 function g(id){return document.getElementById(id);}
@@ -27,7 +27,8 @@ function defaultTpl(){return[{id:'t1',nome:'Renda',valor:700,cat:'Habitação',a
 
 function lsSave(){if(!LS_KEY)return;var s=JSON.stringify(getData());try{localStorage.setItem(LS_KEY,s);}catch(e){}try{sessionStorage.setItem(LS_KEY,s);}catch(e){}try{localStorage.setItem(LS_KEY+'_boca',JSON.stringify({data:bocaData,config:bocaConfig}));}catch(e){}try{localStorage.setItem(LS_KEY+'_renda',JSON.stringify(rendaData));}catch(e){}}
 function lsLoad(){if(!LS_KEY)return null;try{var r=localStorage.getItem(LS_KEY)||sessionStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
-function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r){var rd=JSON.parse(r);rendaData=Array.isArray(rd)?rd:(rd.data||[]);}}catch(e){}try{var rv=localStorage.getItem(LS_KEY+'_reservas');if(rv)reservasData=JSON.parse(rv);}catch(e){}}
+function loadBocaRenda(){try{var b=localStorage.getItem(LS_KEY+'_boca');if(b){var p=JSON.parse(b);bocaData=p.data||[];bocaConfig=p.config||{total:0};}}catch(e){}try{var r=localStorage.getItem(LS_KEY+'_renda');if(r){var rd=JSON.parse(r);rendaData=Array.isArray(rd)?rd:(rd.data||[]);}}catch(e){}try{var rv=localStorage.getItem(LS_KEY+'_reservas');if(rv)reservasData=JSON.parse(rv);}catch(e){}
+  try{var sa=localStorage.getItem(LS_KEY+'_sajuste');if(sa)saldoAjuste=parseFloat(sa)||0;}catch(e){}}
 function setSS(s){var d=g('sync-dot'),l=g('sync-lbl');if(!d)return;d.className='dot'+(s==='syncing'?' syncing':s==='error'?' error':'');if(l)l.textContent=s==='syncing'?'a guardar...':s==='error'?'local':'guardado';}
 function saveAll(){
   if(!USER_KEY)return;
@@ -518,17 +519,43 @@ function sendMentor(){
 document.addEventListener('DOMContentLoaded',function(){var inp=g('mentor-input');if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMentor();}});});
 
 // RESUMO
+
+function setSaldoAjuste(){
+  var inp=g('saldo-ajuste-inp');
+  if(!inp)return;
+  var val=parseFloat(inp.value);
+  if(isNaN(val)){alert('Insere um valor válido.');return;}
+  saldoAjuste=val;
+  try{localStorage.setItem(LS_KEY+'_sajuste',saldoAjuste);}catch(e){}
+  renderResumo();
+  // hide edit form
+  var form=g('saldo-ajuste-form');
+  if(form)form.style.display='none';
+}
+function toggleSaldoAjuste(){
+  var form=g('saldo-ajuste-form');
+  if(!form)return;
+  if(form.style.display==='none'||!form.style.display){
+    form.style.display='block';
+    var inp=g('saldo-ajuste-inp');
+    if(inp)inp.value=saldoAjuste||'';
+    inp.focus();
+  } else {
+    form.style.display='none';
+  }
+}
+
 function renderResumo(){
   var m=g('r-month')?g('r-month').value:cur(),isCur=m===cur();
   var entIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}),entPrev=entradas.filter(function(e){return e.tipo==='prevista'&&mk(e.data)===m;});
   var despIn=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}),diIn=diario.filter(function(d){return mk(d.data)===m;});
   var tIn=entIn.reduce(function(s,e){return s+e.valor;},0),tPrev=entPrev.reduce(function(s,e){return s+e.valor;},0);
   var tD=despIn.reduce(function(s,d){return s+d.valor;},0),tDi=diIn.reduce(function(s,d){return s+d.valor;},0);
-  var tOut=tD+tDi,saldo=tIn-tOut,taxa=tIn>0?Math.round((Math.max(saldo,0)/tIn)*100):0,sc=saldoCls(saldo);
+  var tOut=tD+tDi,saldoCalc=tIn-tOut,saldo=saldoCalc+saldoAjuste,taxa=tIn>0?Math.round((Math.max(saldo,0)/tIn)*100):0,sc=saldoCls(saldo);
   if(isCur&&g('r-mentor-msg')){var ci0=cycleInfo(),maxD0=ci0.daysLeft>0?Math.max(0,Math.floor(saldo/ci0.daysLeft)):0,msg='';if(saldo<0)msg='<div class="alert alr">🚨 <strong>Mentor:</strong> Conta em vermelho. Nenhuma despesa não essencial até ao dia 5.</div>';else if(saldo<100)msg='<div class="alert alr">🔴 <strong>Mentor:</strong> Saldo de '+fmt(saldo)+' — zona de perigo. Máx. '+fmt(maxD0)+'/dia.</div>';else if(saldo<150)msg='<div class="alert ala">🟠 <strong>Mentor:</strong> Saldo de '+fmt(saldo)+' — atenção. Máx. '+fmt(maxD0)+'/dia.</div>';else if(taxa>=20)msg='<div class="alert alg">🟢 <strong>Mentor:</strong> Excelente! '+taxa+'% de poupança. Move parte para um objetivo.</div>';g('r-mentor-msg').innerHTML=msg;}
   if(isCur&&g('r-countdown')){var ci2=cycleInfo(),maxD2=ci2.daysLeft>0?Math.max(0,Math.floor(saldo/ci2.daysLeft)):0,ws=getWeekSpend(),wc=saldo<100?'var(--red)':saldo<150?'var(--amber)':'var(--t)';g('r-countdown').innerHTML='<div class="countdown" style="background:'+wc+';">'+'<div><div class="cd-big">'+ci2.daysLeft+' dias para o dia 5</div><div class="cd-sub">'+saldoEmoji(saldo)+' Saldo: <strong>'+fmt(saldo)+'</strong></div></div>'+'<div style="text-align:right;"><div style="font-size:14px;font-weight:500;">Máx. '+fmt(maxD2)+'/dia</div><div style="font-size:12px;opacity:.7;">Esta semana: '+fmt(ws)+'</div></div></div>';}else if(g('r-countdown')&&!isCur)g('r-countdown').innerHTML='';
   var alts='';if(tIn===0)alts+='<div class="alert ala">Sem entradas para '+mlbl(m)+'. Regista em Entradas.</div>';if(saldo<0&&tIn>0)alts+='<div class="alert alr">Conta em <strong>VERMELHO</strong>!</div>';else if(saldo<100&&tIn>0)alts+='<div class="alert alr">🔴 Saldo abaixo de 100€ — zona de perigo!</div>';else if(saldo<150&&tIn>0)alts+='<div class="alert ala">🟠 Saldo entre 100-150€ — atenção!</div>';else if(taxa>=20&&tIn>0)alts+='<div class="alert alg">🟢 Óptimo! '+taxa+'% de poupança.</div>';if(tPrev>0)alts+='<div class="alert alp">'+fmt(tPrev)+' em entradas previstas — ver sugestões em Entradas.</div>';var dpp=despIn.filter(function(d){return!d.pago;});if(dpp.length>0)alts+='<div class="alert ala">'+dpp.length+' despesa(s) por pagar: <strong>'+fmt(dpp.reduce(function(s,d){return s+d.valor;},0))+'</strong>.</div>';if(g('r-alerts'))g('r-alerts').innerHTML=alts;
-  if(g('r-metrics'))g('r-metrics').innerHTML='<div class="metric"><div class="ml">Entradas</div><div class="mv g">'+fmt(tIn)+'</div></div>'+'<div class="metric"><div class="ml">Despesas</div><div class="mv r">'+fmt(tD)+'</div></div>'+'<div class="metric"><div class="ml">Diário</div><div class="mv r">'+fmt(tDi)+'</div></div>'+'<div class="metric"><div class="ml">Saldo</div><div class="mv '+sc+'">'+fmt(saldo)+'</div></div>'+'<div class="metric"><div class="ml">Poupança</div><div class="mv '+(taxa>=20?'g':taxa>=10?'a':'r')+'">'+taxa+'%</div></div>'+(tPrev>0?'<div class="metric"><div class="ml">Previstas</div><div class="mv" style="color:var(--purple);">'+fmt(tPrev)+'</div></div>':'');
+  if(g('r-metrics'))g('r-metrics').innerHTML='<div class="metric"><div class="ml">Entradas</div><div class="mv g">'+fmt(tIn)+'</div></div>'+'<div class="metric"><div class="ml">Despesas</div><div class="mv r">'+fmt(tD)+'</div></div>'+'<div class="metric"><div class="ml">Diário</div><div class="mv r">'+fmt(tDi)+'</div></div>'+'<div class="metric" onclick="toggleSaldoAjuste()" style="cursor:pointer;position:relative;" title="Clica para ajustar o saldo real"><div class="ml">Saldo real <span style="font-size:9px;opacity:.6;">✏️</span></div><div class="mv '+sc+'">'+fmt(saldo)+'</div>'+(saldoAjuste!==0?'<div style="font-size:10px;color:var(--t3);">ajuste: '+(saldoAjuste>0?'+':'')+fmt(saldoAjuste)+'</div>':'')+'<div id="saldo-ajuste-form" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:180px;"><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Saldo real da conta (€)</div><input id="saldo-ajuste-inp" type="number" step="0.01" placeholder="ex: 350.00" style="font-size:13px;margin-bottom:5px;" onkeydown="if(event.key===\'Enter\')setSaldoAjuste()"><button class="btn ba bsm" onclick="setSaldoAjuste()" style="width:100%;">Aplicar</button><div style="font-size:10px;color:var(--t3);margin-top:4px;">A diferença é guardada como ajuste. Clica fora para cancelar.</div></div></div>'+'<div class="metric"><div class="ml">Poupança</div><div class="mv '+(taxa>=20?'g':taxa>=10?'a':'r')+'">'+taxa+'%</div></div>'+(tPrev>0?'<div class="metric"><div class="ml">Previstas</div><div class="mv" style="color:var(--purple);">'+fmt(tPrev)+'</div></div>':'');
   var pD=tIn>0?Math.min(Math.round((tD/tIn)*100),100):0,pDi=tIn>0?Math.min(Math.round((tDi/tIn)*100),100):0,pT=pD+pDi;
   if(g('r-spendbar'))g('r-spendbar').innerHTML='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span>Gasto: <strong>'+fmt(tOut)+'</strong></span><span style="color:'+(pT>90?'var(--red)':'var(--t2)')+';">'+pT+'%</span></div><div class="pbar" style="height:12px;"><div style="display:flex;height:100%;"><div style="width:'+pD+'%;background:var(--red);opacity:.75;"></div><div style="width:'+pDi+'%;background:var(--amber);opacity:.85;"></div></div></div><div style="display:flex;gap:1rem;margin-top:5px;font-size:12px;color:var(--t2);">Fixas '+pD+'% · Diário '+pDi+'%'+(saldo>=0?' · <span style="color:var(--green);">Sobra '+fmt(saldo)+'</span>':' · <span style="color:var(--red);">Défice '+fmt(Math.abs(saldo))+'</span>')+'</div>';
   var eHtml='';entIn.forEach(function(e){eHtml+='<div class="li"><div class="ll"><div class="ln">'+e.desc+(e.recorrente?'<span style="font-size:10px;color:var(--green-t);margin-left:5px;">↻</span>':'')+'</div><div class="ls">'+e.data+'</div></div><div class="lr"><span class="am ai">+'+fmt(e.valor)+'</span></div></div>';});entPrev.forEach(function(e){eHtml+='<div class="li"><div class="ll"><div class="ln">'+e.desc+' <span style="font-size:11px;color:var(--purple-t);">(prevista)</span></div></div><div class="lr"><span class="am apv">~'+fmt(e.valor)+'</span></div></div>';});if(g('r-entradas'))g('r-entradas').innerHTML=eHtml||'<div style="font-size:13px;color:var(--t3);">Sem entradas.</div>';
