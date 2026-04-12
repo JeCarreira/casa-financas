@@ -3,7 +3,7 @@ var API='/api',USER_KEY='',LS_KEY='';
 var entradas=[],despesas=[],diario=[],objetivos=[],desejos=[],templates=[],desafios=[],notas=[];
 var bocaData=[],bocaConfig={total:0},rendaData=[],reservasData=[],saldoAjuste=0;
 var NAV_OPEN=false,MENTOR_HISTORY=[];
-var CAT={'Habitação':'#1B4F72','Alimentação':'#1E6348','Transportes':'#7A4A0A','Filhos':'#3D2580','Saúde':'#8B1F1F','Lazer':'#0E5E5E','Serviços':'#4A3A6B','Vestuário':'#5C3D1E','Café / Bar':'#6B4226','Gasolina':'#4A3A0A','Compras':'#1A4A1A','Criança':'#3D2580','Farmácia':'#8B1F1F','Outro':'#5C5C5C'};
+var CAT={'Habitação':'#1B4F72','Alimentação':'#1E6348','Transportes':'#7A4A0A','Filhos':'#3D2580','Saúde':'#8B1F1F','Lazer':'#0E5E5E','Serviços':'#4A3A6B','Vestuário':'#5C3D1E','Café / Bar':'#6B4226','Gasóleo':'#4A3A0A','Compras':'#1A4A1A','Criança':'#3D2580','Farmácia':'#8B1F1F','Outro':'#5C5C5C'};
 function g(id){return document.getElementById(id);}
 function fmt(n){return(Math.round((n||0)*100)/100).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 function today(){return new Date().toISOString().split('T')[0];}
@@ -393,13 +393,23 @@ function addDesp(){
   saveAll();reRender();
 }
 
-function editDespVal(id){
-  var d=despesas.find(function(x){return x.id===id;});
-  if(!d)return;
-  var novo=parseFloat(prompt('Novo valor para "'+d.desc+'" (actual: '+fmt(d.valor)+'):', d.valor));
-  if(isNaN(novo)||novo<0)return;
-  d.valor=novo;
-  saveAll();renderDesp();renderResumo();
+var EDIT_DESP_ID='';
+function editDespVal(id){EDIT_DESP_ID=id;
+  var d=despesas.find(function(x){return x.id===id;});if(!d)return;
+  g('me-title').textContent=d.desc;
+  g('me-body').innerHTML=
+    '<div class="alert alb" style="font-size:12px;margin-bottom:.7rem;">Podes ajustar o valor estimado e registar quanto já gastaste desta despesa.</div>'
+    +'<div class="fr"><div class="fg"><label>Valor estimado (€)</label><input id="edv-val" type="number" value="'+d.valor+'" step="0.01"></div></div>'
+    +'<div class="fr"><div class="fg"><label>Já gastei (€)</label><input id="edv-gasto" type="number" value="'+(d.gasto||0)+'" step="0.01" placeholder="0"></div></div>'
+    +(d.gasto>0?'<div style="margin-bottom:.7rem;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Gasto: '+fmt(d.gasto||0)+'</span><span style="color:var(--t3);">Estimado: '+fmt(d.valor)+'</span></div><div class="pbar"><div class="pfill" style="width:'+Math.min(Math.round(((d.gasto||0)/d.valor)*100),100)+'%;background:'+((d.gasto||0)>d.valor?'var(--red)':'var(--accent)')+'"></div></div><div style="font-size:12px;color:var(--t2);margin-top:3px;">Falta: '+fmt(Math.max(d.valor-(d.gasto||0),0))+'</div></div>':'')
+    +'<button class="btn ba" style="width:100%;margin-top:.3rem;" onclick="saveEditDesp(EDIT_DESP_ID)">Guardar</button>';
+  openM('m-obj-edit');
+}
+function saveEditDesp(){
+  var d=despesas.find(function(x){return x.id===EDIT_DESP_ID;});if(!d)return;
+  d.valor=parseFloat(g('edv-val').value)||d.valor;
+  d.gasto=parseFloat(g('edv-gasto').value)||0;
+  saveAll();renderDesp();renderResumo();closeM('m-obj-edit');
 }
 
 function delDesp(id){despesas=despesas.filter(function(d){return d.id!==id;});saveAll();reRender();}
@@ -531,25 +541,22 @@ document.addEventListener('DOMContentLoaded',function(){var inp=g('mentor-input'
 // RESUMO
 
 function setSaldoAjuste(){
-  var inp=g('saldo-ajuste-inp');
-  if(!inp)return;
-  var val=parseFloat(inp.value);
-  if(isNaN(val)){alert('Insere um valor válido.');return;}
-  saldoAjuste=val;
+  var inp=g('saldo-ajuste-inp');if(!inp)return;
+  var calc=parseFloat(inp.getAttribute('data-calc'))||0;
+  var real=parseFloat(inp.value);
+  if(isNaN(real)){alert('Insere o saldo real da conta.');return;}
+  saldoAjuste=real-calc;
   try{localStorage.setItem(LS_KEY+'_sajuste',saldoAjuste);}catch(e){}
+  var form=g('saldo-ajuste-form');if(form)form.style.display='none';
   renderResumo();
-  // hide edit form
-  var form=g('saldo-ajuste-form');
-  if(form)form.style.display='none';
 }
-function toggleSaldoAjuste(){
-  var form=g('saldo-ajuste-form');
-  if(!form)return;
-  if(form.style.display==='none'||!form.style.display){
+function toggleSaldoAjuste(calcSaldo){
+  var form=g('saldo-ajuste-form');if(!form)return;
+  var isHidden=form.style.display==='none'||!form.style.display;
+  if(isHidden){
     form.style.display='block';
     var inp=g('saldo-ajuste-inp');
-    if(inp)inp.value=saldoAjuste||'';
-    inp.focus();
+    if(inp){inp.setAttribute('data-calc',calcSaldo||0);inp.value=(calcSaldo+saldoAjuste)||'';inp.select();}
   } else {
     form.style.display='none';
   }
@@ -565,7 +572,7 @@ function renderResumo(){
   if(isCur&&g('r-mentor-msg')){var ci0=cycleInfo(),maxD0=ci0.daysLeft>0?Math.max(0,Math.floor(saldo/ci0.daysLeft)):0,msg='';if(saldo<0)msg='<div class="alert alr">🚨 <strong>Mentor:</strong> Conta em vermelho. Nenhuma despesa não essencial até ao dia 5.</div>';else if(saldo<100)msg='<div class="alert alr">🔴 <strong>Mentor:</strong> Saldo de '+fmt(saldo)+' — zona de perigo. Máx. '+fmt(maxD0)+'/dia.</div>';else if(saldo<150)msg='<div class="alert ala">🟠 <strong>Mentor:</strong> Saldo de '+fmt(saldo)+' — atenção. Máx. '+fmt(maxD0)+'/dia.</div>';else if(taxa>=20)msg='<div class="alert alg">🟢 <strong>Mentor:</strong> Excelente! '+taxa+'% de poupança. Move parte para um objetivo.</div>';g('r-mentor-msg').innerHTML=msg;}
   if(isCur&&g('r-countdown')){var ci2=cycleInfo(),maxD2=ci2.daysLeft>0?Math.max(0,Math.floor(saldo/ci2.daysLeft)):0,ws=getWeekSpend(),wc=saldo<100?'var(--red)':saldo<150?'var(--amber)':'var(--t)';g('r-countdown').innerHTML='<div class="countdown" style="background:'+wc+';">'+'<div><div class="cd-big">'+ci2.daysLeft+' dias para o dia 5</div><div class="cd-sub">'+saldoEmoji(saldo)+' Saldo: <strong>'+fmt(saldo)+'</strong></div></div>'+'<div style="text-align:right;"><div style="font-size:14px;font-weight:500;">Máx. '+fmt(maxD2)+'/dia</div><div style="font-size:12px;opacity:.7;">Esta semana: '+fmt(ws)+'</div></div></div>';}else if(g('r-countdown')&&!isCur)g('r-countdown').innerHTML='';
   var alts='';if(tIn===0)alts+='<div class="alert ala">Sem entradas para '+mlbl(m)+'. Regista em Entradas.</div>';if(saldo<0&&tIn>0)alts+='<div class="alert alr">Conta em <strong>VERMELHO</strong>!</div>';else if(saldo<100&&tIn>0)alts+='<div class="alert alr">🔴 Saldo abaixo de 100€ — zona de perigo!</div>';else if(saldo<150&&tIn>0)alts+='<div class="alert ala">🟠 Saldo entre 100-150€ — atenção!</div>';else if(taxa>=20&&tIn>0)alts+='<div class="alert alg">🟢 Óptimo! '+taxa+'% de poupança.</div>';if(tPrev>0)alts+='<div class="alert alp">'+fmt(tPrev)+' em entradas previstas — ver sugestões em Entradas.</div>';var dpp=despIn.filter(function(d){return!d.pago;});if(dpp.length>0)alts+='<div class="alert ala">'+dpp.length+' despesa(s) por pagar: <strong>'+fmt(dpp.reduce(function(s,d){return s+d.valor;},0))+'</strong>.</div>';if(g('r-alerts'))g('r-alerts').innerHTML=alts;
-  if(g('r-metrics'))g('r-metrics').innerHTML='<div class="metric"><div class="ml">Entradas</div><div class="mv g">'+fmt(tIn)+'</div></div>'+'<div class="metric"><div class="ml">Despesas</div><div class="mv r">'+fmt(tD)+'</div></div>'+'<div class="metric"><div class="ml">Diário</div><div class="mv r">'+fmt(tDi)+'</div></div>'+'<div class="metric" onclick="toggleSaldoAjuste()" style="cursor:pointer;position:relative;" title="Clica para ajustar o saldo real"><div class="ml">Saldo real <span style="font-size:9px;opacity:.6;">✏️</span></div><div class="mv '+sc+'">'+fmt(saldo)+'</div>'+(saldoAjuste!==0?'<div style="font-size:10px;color:var(--t3);">ajuste: '+(saldoAjuste>0?'+':'')+fmt(saldoAjuste)+'</div>':'')+'<div id="saldo-ajuste-form" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:180px;"><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Saldo real da conta (€)</div><input id="saldo-ajuste-inp" type="number" step="0.01" placeholder="ex: 350.00" style="font-size:13px;margin-bottom:5px;" onkeydown="if(event.key===\'Enter\')setSaldoAjuste()"><button class="btn ba bsm" onclick="setSaldoAjuste()" style="width:100%;">Aplicar</button><div style="font-size:10px;color:var(--t3);margin-top:4px;">A diferença é guardada como ajuste. Clica fora para cancelar.</div></div></div>'+'<div class="metric"><div class="ml">Poupança</div><div class="mv '+(taxa>=20?'g':taxa>=10?'a':'r')+'">'+taxa+'%</div></div>'+(tPrev>0?'<div class="metric"><div class="ml">Previstas</div><div class="mv" style="color:var(--purple);">'+fmt(tPrev)+'</div></div>':'');
+  if(g('r-metrics'))g('r-metrics').innerHTML='<div class="metric"><div class="ml">Entradas</div><div class="mv g">'+fmt(tIn)+'</div></div>'+'<div class="metric"><div class="ml">Despesas</div><div class="mv r">'+fmt(tD)+'</div></div>'+'<div class="metric"><div class="ml">Diário</div><div class="mv r">'+fmt(tDi)+'</div></div>'+'<div class="metric" onclick="toggleSaldoAjuste('+saldoCalc+')" style="cursor:pointer;position:relative;" title="Clica para ver/editar saldo real"><div class="ml">Saldo real <span style="font-size:9px;opacity:.6;">✏️</span></div><div class="mv '+sc+'">'+fmt(saldo)+'</div>'+(saldoAjuste!==0?'<div style="font-size:10px;color:var(--t3);">ajuste: '+(saldoAjuste>0?'+':'')+fmt(saldoAjuste)+'</div>':'')+'<div id="saldo-ajuste-form" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:180px;"><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Saldo real da conta (€)</div><input id="saldo-ajuste-inp" type="number" step="0.01" placeholder="ex: 350.00" style="font-size:13px;margin-bottom:5px;" onkeydown="if(event.key===\'Enter\')setSaldoAjuste()"><button class="btn ba bsm" onclick="setSaldoAjuste()" style="width:100%;">Aplicar</button><div style="font-size:10px;color:var(--t3);margin-top:4px;">A diferença é guardada como ajuste. Clica fora para cancelar.</div></div></div>'+'<div class="metric"><div class="ml">Poupança</div><div class="mv '+(taxa>=20?'g':taxa>=10?'a':'r')+'">'+taxa+'%</div></div>'+(tPrev>0?'<div class="metric"><div class="ml">Previstas</div><div class="mv" style="color:var(--purple);">'+fmt(tPrev)+'</div></div>':'');
   var pD=tIn>0?Math.min(Math.round((tD/tIn)*100),100):0,pDi=tIn>0?Math.min(Math.round((tDi/tIn)*100),100):0,pT=pD+pDi;
   if(g('r-spendbar'))g('r-spendbar').innerHTML='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span>Gasto: <strong>'+fmt(tOut)+'</strong></span><span style="color:'+(pT>90?'var(--red)':'var(--t2)')+';">'+pT+'%</span></div><div class="pbar" style="height:12px;"><div style="display:flex;height:100%;"><div style="width:'+pD+'%;background:var(--red);opacity:.75;"></div><div style="width:'+pDi+'%;background:var(--amber);opacity:.85;"></div></div></div><div style="display:flex;gap:1rem;margin-top:5px;font-size:12px;color:var(--t2);">Fixas '+pD+'% · Diário '+pDi+'%'+(saldo>=0?' · <span style="color:var(--green);">Sobra '+fmt(saldo)+'</span>':' · <span style="color:var(--red);">Défice '+fmt(Math.abs(saldo))+'</span>')+'</div>';
   var eHtml='';entIn.forEach(function(e){eHtml+='<div class="li"><div class="ll"><div class="ln">'+e.desc+(e.recorrente?'<span style="font-size:10px;color:var(--green-t);margin-left:5px;">↻</span>':'')+'</div><div class="ls">'+e.data+'</div></div><div class="lr"><span class="am ai">+'+fmt(e.valor)+'</span></div></div>';});entPrev.forEach(function(e){eHtml+='<div class="li"><div class="ll"><div class="ln">'+e.desc+' <span style="font-size:11px;color:var(--purple-t);">(prevista)</span></div></div><div class="lr"><span class="am apv">~'+fmt(e.valor)+'</span></div></div>';});if(g('r-entradas'))g('r-entradas').innerHTML=eHtml||'<div style="font-size:13px;color:var(--t3);">Sem entradas.</div>';
