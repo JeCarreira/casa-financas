@@ -392,6 +392,16 @@ function addDesp(){
   g('da-d').value='';g('da-v').value='';
   saveAll();reRender();
 }
+
+function editDespVal(id){
+  var d=despesas.find(function(x){return x.id===id;});
+  if(!d)return;
+  var novo=parseFloat(prompt('Novo valor para "'+d.desc+'" (actual: '+fmt(d.valor)+'):', d.valor));
+  if(isNaN(novo)||novo<0)return;
+  d.valor=novo;
+  saveAll();renderDesp();renderResumo();
+}
+
 function delDesp(id){despesas=despesas.filter(function(d){return d.id!==id;});saveAll();reRender();}
 function togglePago(id){var d=despesas.find(function(x){return x.id===id;});if(d){d.pago=!d.pago;saveAll();renderDesp();renderResumo();}}
 function renderDesp(){
@@ -406,7 +416,7 @@ function renderDesp(){
     html+='<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:9px 0 5px;border-top:.5px solid var(--border);margin-top:3px;">'+dot(cat,9)+'<span>'+cat+'</span><span style="margin-left:auto;font-weight:400;">'+fmt(ct)+'</span></div>';
     html+=items.map(function(d){return'<div class="li" style="'+(d.pago?'opacity:.5;':'')+'">'
       +'<div class="ll"><div class="ln" style="'+(d.pago?'text-decoration:line-through;':'')+'">'+d.desc+(d.projetada?'<span style="font-size:10px;color:var(--t3);margin-left:4px;">proj.</span>':'')+'</div><div class="ls">'+d.data+(d.tipo==='fixa'?' · fixa':' · pontual')+'</div></div>'
-      +'<div class="lr"><span class="am ao">-'+fmt(d.valor)+'</span><button class="btn-check '+(d.pago?'checked':'')+'" onclick="togglePago(\''+d.id+'\')">'+(d.pago?'✓ Pago':'Pagar')+'</button><button class="btn bd bxs" onclick="delDesp(\''+d.id+'\')">×</button></div></div>';}).join('');});
+      +'<div class="lr"><span class="am ao" onclick="editDespVal(\''+d.id+'\')" style="cursor:pointer;border-bottom:1px dashed var(--border2);" title="Clica para editar">-'+fmt(d.valor)+'</span><button class="btn-check '+(d.pago?'checked':'')+'" onclick="togglePago(\''+d.id+'\')">'+(d.pago?'✓ Pago':'Pagar')+'</button><button class="btn bd bxs" onclick="delDesp(\''+d.id+'\')">×</button></div></div>';}).join('');});
   el.innerHTML=html;
 }
 
