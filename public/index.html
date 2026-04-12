@@ -158,6 +158,25 @@
   <div id="lst-objetivos"></div>
 </div>
 
+
+<div class="page" id="page-reservas">
+  <h1>Reservas</h1>
+  <p class="sub">Dinheiro guardado com destino específico — inspecção do carro, dentista, presente de natal, férias...</p>
+  <div class="card">
+    <div class="ct">Nova reserva</div>
+    <div class="fr">
+      <div class="fg" style="flex:2;"><label>Para quê</label><input id="res-nome" placeholder="ex: Inspecção do carro, Dentista, Férias..."></div>
+      <div class="fg"><label>Meta (€)</label><input id="res-meta" type="number" placeholder="200" step="0.01"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Já guardado (€)</label><input id="res-atual" type="number" placeholder="0" step="0.01"></div>
+      <div class="fg"><label>Prazo (opcional)</label><input id="res-prazo" type="date"></div>
+      <div style="align-self:flex-end;"><button class="btn ba" onclick="addReserva()">+ Criar reserva</button></div>
+    </div>
+  </div>
+  <div id="lst-reservas"></div>
+</div>
+
 <div class="page" id="page-desafios">
   <h1>Desafios</h1><p class="sub">Pequenos desafios para construir bons hábitos.</p>
   <div class="card"><div class="ct">Criar desafio personalizado</div><div class="fr"><div class="fg" style="flex:2;"><label>Nome</label><input id="ch-nome" placeholder="ex: Sem compras supérfluas em abril"></div><div class="fg"><label>Meta (€)</label><input id="ch-meta" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Duração (semanas)</label><input id="ch-dur" type="number" placeholder="4" min="1"></div><div class="fg"><label>Data início</label><input id="ch-ini" type="date"></div></div><div class="fr"><div class="fg"><label>Descrição</label><input id="ch-desc" placeholder="detalha o desafio..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesafio()">+ Criar</button></div></div></div>
