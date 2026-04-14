@@ -439,7 +439,7 @@ function renderDiar(){
   var total=f.reduce(function(s,d){return s+d.valor;},0);g('dr-total-pill').textContent='Este mês: '+fmt(total);
   var ci=cycleInfo(),tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
   var tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
-  var saldo=tIn-tD-total,maxD=ci.daysLeft>0?Math.max(0,Math.floor(saldo/ci.daysLeft)):0,ws=getWeekSpend();
+  var saldo=tIn-tD-total+saldoAjuste,maxD=ci.daysLeft>0?Math.max(0,Math.floor(saldo/ci.daysLeft)):0,ws=getWeekSpend();
   var alts='<div class="alert '+(saldo>=150?'alg':saldo>=100?'ala':'alr')+'">'+saldoEmoji(saldo)+' Saldo: <strong>'+fmt(saldo)+'</strong>'+(maxD>0?' · Máx. <strong>'+fmt(maxD)+'</strong>/dia':'')+'</div>';
   if(ci.daysLeft<=5&&ci.daysLeft>0)alts+='<div class="alert alr">🚨 Faltam só <strong>'+ci.daysLeft+' dias</strong> para o dia 5!</div>';
   if(ws>maxD*7&&maxD>0)alts+='<div class="alert alr">Esta semana gastaste '+fmt(ws)+' — acima do ritmo!</div>';
