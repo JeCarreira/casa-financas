@@ -21,8 +21,8 @@ function saldoEmoji(v){return v>=150?'🟢':v>=100?'🟠':'🔴';}
 // Helper: returns true for any real (non-prevista) entry - supports old and new data
 function isEntradaReal(e){ return e.tipo==='entrada'||e.tipo==='salario'||e.tipo==='caf'; }
 
-function getData(){return{entradas:entradas,despesas:despesas,diario:diario,objetivos:objetivos,desejos:desejos,templates:templates,desafios:desafios,notas:notas,_ts:Date.now()};}
-function applyData(d){if(!d)return;entradas=d.entradas||[];despesas=d.despesas||[];diario=d.diario||[];objetivos=d.objetivos||[];desejos=d.desejos||[];desafios=d.desafios||[];notas=d.notas||[];templates=(d.templates&&d.templates.length)?d.templates:defaultTpl();}
+function getData(){return{entradas:entradas,despesas:despesas,diario:diario,objetivos:objetivos,desejos:desejos,templates:templates,desafios:desafios,notas:notas,saldoAjuste:saldoAjuste,_ts:Date.now()};}
+function applyData(d){if(!d)return;entradas=d.entradas||[];despesas=d.despesas||[];diario=d.diario||[];objetivos=d.objetivos||[];desejos=d.desejos||[];desafios=d.desafios||[];notas=d.notas||[];templates=(d.templates&&d.templates.length)?d.templates:defaultTpl();if(d.saldoAjuste!==undefined)saldoAjuste=d.saldoAjuste;}
 function defaultTpl(){return[{id:'t1',nome:'Renda',valor:700,cat:'Habitação',ativo:true,dia:1,recorrente:true},{id:'t2',nome:'Electricidade + água + gás',valor:120,cat:'Serviços',ativo:true,dia:15,recorrente:true},{id:'t3',nome:'Internet + telemóvel',valor:60,cat:'Serviços',ativo:true,dia:10,recorrente:true},{id:'t4',nome:'Supermercado',valor:400,cat:'Alimentação',ativo:true,dia:5,recorrente:true},{id:'t5',nome:'Gasolina',valor:150,cat:'Transportes',ativo:true,dia:5,recorrente:true},{id:'t6',nome:'Escola / filhos',valor:200,cat:'Filhos',ativo:true,dia:1,recorrente:true}];}
 
 function lsSave(){if(!LS_KEY)return;var s=JSON.stringify(getData());try{localStorage.setItem(LS_KEY,s);}catch(e){}try{sessionStorage.setItem(LS_KEY,s);}catch(e){}try{localStorage.setItem(LS_KEY+'_boca',JSON.stringify({data:bocaData,config:bocaConfig}));}catch(e){}try{localStorage.setItem(LS_KEY+'_renda',JSON.stringify(rendaData));}catch(e){}}
@@ -44,7 +44,7 @@ function loadAndStart(){
   loadBocaRenda();
   populateSels();renderResumo();renderTpl();renderDesafiosSugeridos();renderInvestir();renderDicas();renderMentorSugs();
   setTimeout(checkReminder,2500);
-  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY})}).then(function(r){return r.ok?r.json():null;}).then(function(res){if(!res||!res.data)return;var lt=local?local._ts||0:0,ct=res.data._ts||0;if(ct>lt){applyData(res.data);lsSave();populateSels();reRender();}}).catch(function(){});
+  fetch(API+'/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY})}).then(function(r){return r.ok?r.json():null;}).then(function(res){if(!res||!res.data)return;var lt=local?local._ts||0:0,ct=res.data._ts||0;if(ct>=lt){applyData(res.data);lsSave();populateSels();reRender();}}).catch(function(){});
   var bocaKeys=[USER_KEY+'boca', USER_KEY+'_boca'];
   (function tryNextBocaKey(keys,i){
     if(i>=keys.length)return;
