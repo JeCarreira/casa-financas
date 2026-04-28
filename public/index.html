@@ -123,24 +123,35 @@
 
 <div class="page" id="page-despesas">
   <div class="page-hdr"><h1>Despesas</h1><select id="d-month" onchange="renderDesp()" style="width:auto;font-size:13px;padding:6px 10px;"></select></div>
-  <p class="sub">Despesas fixas e pontuais.</p>
+  <p class="sub">Regista todas as despesas do mês — fixas e pontuais. As fixas em cima são só um template para não teres de escrever sempre.</p>
   <div class="card">
     <div class="shdr"><div class="ct" style="margin-bottom:0;">Despesas fixas</div><div style="display:flex;gap:6px;"><button class="btn bg bsm" onclick="openM('m-addtpl')">+ Rubrica</button><button class="btn ba bsm" onclick="aplicarTpl()">Aplicar ao mês</button></div></div>
     <p style="font-size:12px;color:var(--t2);margin-bottom:.7rem;">Marca as que se aplicam, ajusta valores e carrega "Aplicar ao mês".</p>
     <div id="tpl-list"></div>
   </div>
-  <!-- PLANEADAS -->
+  <!-- DESPESAS DO MÊS -->
   <div class="card">
     <div class="shdr">
       <div>
         <div class="ct" style="margin-bottom:2px;">Despesas planeadas do mês</div>
-        <p style="font-size:12px;color:var(--t2);">Estimativas e pontuais. Clica no valor para editar. Regista o que já gastaste em cada uma.</p>
+        <p style="font-size:12px;color:var(--t2);">O que realmente gastas este mês — vêm das fixas (após "Aplicar") ou adicionas directamente aqui.</p>
       </div>
       <span id="d-total-pill" class="pill pr">0 €</span>
     </div>
-    <div class="fr"><div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Supermercado, Gasóleo, Farmácia..."></div><div class="fg"><label>Valor estimado (€)</label><input id="da-v" type="number" placeholder="0"></div></div>
-    <div class="fr"><div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Animais</option><option>Escola</option><option>Beleza / Higiene</option><option>Tecnologia</option><option>Restaurante</option><option>Outro</option></select></div><div class="fg"><label>Data</label><input id="da-dt" type="date"></div></div>
-    <div class="fr" style="align-items:center;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input id="da-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Recorrente (projeta para os próximos meses)</label><div style="margin-left:auto;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div></div>
+    <div class="fr">
+      <div class="fg" style="flex:2;"><label>Descrição</label><input id="da-d" placeholder="ex: Renda, Supermercado, Farmácia..."></div>
+      <div class="fg"><label>Valor (€)</label><input id="da-v" type="number" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Categoria</label><select id="da-c"><option>Habitação</option><option>Alimentação</option><option>Transportes</option><option>Filhos</option><option>Saúde</option><option>Lazer</option><option>Serviços</option><option>Vestuário</option><option>Animais</option><option>Escola</option><option>Beleza / Higiene</option><option>Tecnologia</option><option>Restaurante</option><option>Outro</option></select></div>
+      <div class="fg"><label>Data</label><input id="da-dt" type="date"></div>
+    </div>
+    <div class="fr" style="align-items:center;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input id="da-rec" type="checkbox" style="width:16px;cursor:pointer;accent-color:var(--accent);"> ↻ Repete todos os meses
+      </label>
+      <div style="margin-left:auto;"><button class="btn ba" onclick="addDesp()">+ Adicionar</button></div>
+    </div>
     <div id="lst-despesas"></div>
   </div>
 </div>
