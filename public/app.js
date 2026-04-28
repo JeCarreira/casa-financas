@@ -73,6 +73,28 @@ function loadAndStart(){
   })(rendaKeys,0);
 }
 
+
+function resetTudo(){
+  if(!confirm('Tens a certeza? Isto apaga TODOS os dados desta conta — entradas, despesas, diário, objetivos, reservas, tudo.\n\nEsta acção não pode ser desfeita.'))return;
+  if(!confirm('Confirmação final: apagar tudo?'))return;
+  // Clear all data
+  entradas=[];despesas=[];diario=[];objetivos=[];desejos=[];templates=defaultTpl();desafios=[];notas=[];
+  bocaData=[];bocaConfig={total:0};rendaData=[];reservasData=[];saldoAjuste=0;
+  // Clear localStorage
+  try{localStorage.removeItem(LS_KEY);}catch(e){}
+  try{localStorage.removeItem(LS_KEY+'_boca');}catch(e){}
+  try{localStorage.removeItem(LS_KEY+'_renda');}catch(e){}
+  try{localStorage.removeItem(LS_KEY+'_reservas');}catch(e){}
+  try{localStorage.removeItem(LS_KEY+'_sajuste');}catch(e){}
+  // Clear cloud
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY,data:getData()})}).catch(function(){});
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca',data:{data:[],config:{total:0}}})}).catch(function(){});
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda',data:[]})}).catch(function(){});
+  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'reservas',data:[]})}).catch(function(){});
+  populateSels();reRender();
+  alert('Tudo apagado. Podes começar de novo.');
+}
+
 function doLogin(){
   var code=g('login-code').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
   if(code.length<3){g('login-err').textContent='Código demasiado curto.';return;}
@@ -439,7 +461,8 @@ function renderDiar(){
   var total=f.reduce(function(s,d){return s+d.valor;},0);g('dr-total-pill').textContent='Este mês: '+fmt(total);
   var ci=cycleInfo(),tIn=entradas.filter(function(e){return isEntradaReal(e)&&mk(e.data)===m;}).reduce(function(s,e){return s+e.valor;},0);
   var tD=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
-  var saldo=tIn-tD-total+saldoAjuste,maxD=ci.daysLeft>0?Math.max(0,Math.floor(saldo/ci.daysLeft)):0,ws=getWeekSpend();
+  var tDTodas=despesas.filter(function(d){return mk(d.data)===m&&!d.projetada;}).reduce(function(s,d){return s+d.valor;},0);
+  var saldo=tIn-tDTodas-total+saldoAjuste,maxD=ci.daysLeft>0?Math.max(0,Math.floor(saldo/ci.daysLeft)):0,ws=getWeekSpend();
   var alts='<div class="alert '+(saldo>=150?'alg':saldo>=100?'ala':'alr')+'">'+saldoEmoji(saldo)+' Saldo: <strong>'+fmt(saldo)+'</strong>'+(maxD>0?' · Máx. <strong>'+fmt(maxD)+'</strong>/dia':'')+'</div>';
   if(ci.daysLeft<=5&&ci.daysLeft>0)alts+='<div class="alert alr">🚨 Faltam só <strong>'+ci.daysLeft+' dias</strong> para o dia 5!</div>';
   if(ws>maxD*7&&maxD>0)alts+='<div class="alert alr">Esta semana gastaste '+fmt(ws)+' — acima do ritmo!</div>';
