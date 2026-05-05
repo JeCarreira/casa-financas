@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Recuperar dados — Casa &amp; Finanças</title>
+<style>
+body{font-family:sans-serif;padding:2rem;max-width:640px;margin:0 auto;background:#f5f2ed;color:#1C1A17;}
+h1{font-size:22px;margin-bottom:.5rem;}
+p{font-size:13px;color:#6B6560;margin-bottom:1rem;}
+.card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:1.1rem 1.3rem;margin-bottom:1rem;}
+pre{font-size:11px;overflow:auto;background:#f0f0f0;padding:8px;border-radius:6px;white-space:pre-wrap;max-height:300px;}
+.btn{padding:9px 18px;background:#B5652A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;}
+.btn-g{background:#1E6348;}
+input{padding:8px 10px;border:1px solid #ddd;border-radius:6px;width:100%;margin-bottom:8px;font-size:14px;box-sizing:border-box;}
+.ok{color:#145234;font-weight:600;}
+.no{color:#6B1616;}
+label{font-size:12px;font-weight:600;color:#6B6560;display:block;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<h1>Recuperar dados</h1>
+<p>Usa esta página para ver o que ainda existe na cloud e restaurar dados apagados por engano.</p>
+<div class="card">
+  <label>Código de família</label>
+  <input id="code" placeholder="ex: familiacosta" value="">
+  <button class="btn" onclick="tryRecover()">Procurar dados na cloud</button>
+</div>
+<div id="results"></div>
+<script>
+async function tryRecover(){
+  var raw = document.getElementById('code').value.trim().toLowerCase();
+  var code = raw.replace(/[^a-z0-9]/g,'');
+  if(code.length < 3){ alert('Escreve o código de família.'); return; }
+  var el = document.getElementById('results');
+  el.innerHTML = '<div class="card">A procurar na cloud...</div>';
+  var keys = [
+    {key:code, label:'Dados principais (entradas, despesas, diário, objetivos...)'},
+    {key:code+'boca', label:'Casa Portugal'},
+    {key:code+'renda', label:'Renda Portugal'},
+    {key:code+'reservas', label:'Reservas'},
+  ];
+  var html = '';
+  for(var k of keys){
+    try{
+      var r = await fetch('/api/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k.key})});
+      var data = await r.json();
+      var hasData = data && data.data && JSON.stringify(data.data) !== 'null' && JSON.stringify(data.data) !== '{}' && JSON.stringify(data.data) !== '[]';
+      var preview = hasData ? JSON.stringify(data.data, null, 2).slice(0, 3000) : '';
+      html += '<div class="card">';
+      html += '<div style="margin-bottom:.5rem;">'+(hasData?'<span class="ok">✅ Encontrado</span>':'<span class="no">❌ Sem dados</span>')+' — '+k.label+'</div>';
+      if(hasData) html += '<pre>'+preview+(preview.length>=3000?'\n... (truncado)':'')+'</pre>';
+      html += '</div>';
+    } catch(e){
+      html += '<div class="card"><span class="no">⚠️ Erro</span> — '+k.label+': '+e.message+'</div>';
+    }
+  }
+  el.innerHTML = html;
+}
+</script>
+</body>
+</html>
