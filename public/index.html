@@ -269,5 +269,28 @@
 <div class="modal-overlay" id="m-obj-edit"><div class="modal"><h2 id="me-title">Actualizar objetivo</h2><div id="me-body"></div><div class="mf"><button class="btn bg" onclick="closeM('m-obj-edit')">Fechar</button></div></div></div>
 
 <script src="/app.js"></script>
+
+<!-- MODAL RESET -->
+<div class="modal-overlay" id="m-reset">
+  <div class="modal">
+    <h2>Apagar dados</h2>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:1rem;">Escolhe o que queres apagar. Esta acção não pode ser desfeita.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('entradas')">🗑 Apagar todas as Entradas</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('despesas')">🗑 Apagar todas as Despesas do mês</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('diario')">🗑 Apagar todo o Diário</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('objetivos')">🗑 Apagar todos os Objetivos</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('reservas')">🗑 Apagar todas as Reservas</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('desejos')">🗑 Apagar lista de Desejos</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('desafios')">🗑 Apagar Desafios</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('boca')">🗑 Apagar Casa Portugal</button>
+      <button class="btn bd" style="text-align:left;" onclick="resetSecao('renda')">🗑 Apagar Renda Portugal</button>
+      <hr style="margin:.5rem 0;">
+      <button class="btn bd" style="text-align:left;background:#6B1616;color:#fff;" onclick="resetSecao('tudo')">⚠️ Apagar TUDO — conta inteira</button>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="closeM('m-reset')">Cancelar</button></div>
+  </div>
+</div>
+
 </body>
 </html>
