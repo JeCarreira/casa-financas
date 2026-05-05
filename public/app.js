@@ -74,26 +74,36 @@ function loadAndStart(){
 }
 
 
-function resetTudo(){
-  if(!confirm('Tens a certeza? Isto apaga TODOS os dados desta conta — entradas, despesas, diário, objetivos, reservas, tudo.\n\nEsta acção não pode ser desfeita.'))return;
-  if(!confirm('Confirmação final: apagar tudo?'))return;
-  // Clear all data
-  entradas=[];despesas=[];diario=[];objetivos=[];desejos=[];templates=defaultTpl();desafios=[];notas=[];
-  bocaData=[];bocaConfig={total:0};rendaData=[];reservasData=[];saldoAjuste=0;
-  // Clear localStorage
-  try{localStorage.removeItem(LS_KEY);}catch(e){}
-  try{localStorage.removeItem(LS_KEY+'_boca');}catch(e){}
-  try{localStorage.removeItem(LS_KEY+'_renda');}catch(e){}
-  try{localStorage.removeItem(LS_KEY+'_reservas');}catch(e){}
-  try{localStorage.removeItem(LS_KEY+'_sajuste');}catch(e){}
-  // Clear cloud
-  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY,data:getData()})}).catch(function(){});
-  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca',data:{data:[],config:{total:0}}})}).catch(function(){});
-  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda',data:[]})}).catch(function(){});
-  fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'reservas',data:[]})}).catch(function(){});
-  populateSels();reRender();
-  alert('Tudo apagado. Podes começar de novo.');
+function resetSecao(secao){
+  var nomes={entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',reservas:'Reservas',desejos:'Desejos',desafios:'Desafios',boca:'Casa Portugal',renda:'Renda Portugal',tudo:'TUDO (conta inteira)'};
+  var nome=nomes[secao]||secao;
+  if(!confirm('Apagar todos os dados de: '+nome+'?\n\nEsta acção não pode ser desfeita.'))return;
+  if(secao==='entradas'){entradas=[];}
+  else if(secao==='despesas'){despesas=[];}
+  else if(secao==='diario'){diario=[];}
+  else if(secao==='objetivos'){objetivos=[];}
+  else if(secao==='reservas'){reservasData=[];try{localStorage.removeItem(LS_KEY+'_reservas');}catch(e){}fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'reservas',data:[]})}).catch(function(){});}
+  else if(secao==='desejos'){desejos=[];}
+  else if(secao==='desafios'){desafios=[];}
+  else if(secao==='boca'){bocaData=[];bocaConfig={total:0};try{localStorage.removeItem(LS_KEY+'_boca');}catch(e){}fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca',data:{data:[],config:{total:0}}})}).catch(function(){});}
+  else if(secao==='renda'){rendaData=[];try{localStorage.removeItem(LS_KEY+'_renda');}catch(e){}fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda',data:[]})}).catch(function(){});}
+  else if(secao==='tudo'){
+    if(!confirm('Confirmação final: apagar TUDO mesmo?'))return;
+    entradas=[];despesas=[];diario=[];objetivos=[];desejos=[];templates=defaultTpl();desafios=[];notas=[];
+    bocaData=[];bocaConfig={total:0};rendaData=[];reservasData=[];saldoAjuste=0;
+    try{localStorage.removeItem(LS_KEY);}catch(e){}
+    try{localStorage.removeItem(LS_KEY+'_boca');}catch(e){}
+    try{localStorage.removeItem(LS_KEY+'_renda');}catch(e){}
+    try{localStorage.removeItem(LS_KEY+'_reservas');}catch(e){}
+    try{localStorage.removeItem(LS_KEY+'_sajuste');}catch(e){}
+    fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'boca',data:{data:[],config:{total:0}}})}).catch(function(){});
+    fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'renda',data:[]})}).catch(function(){});
+    fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:USER_KEY+'reservas',data:[]})}).catch(function(){});
+  }
+  saveAll();populateSels();reRender();
+  alert(nome+' apagado.');
 }
+function resetTudo(){openM('m-reset');}
 
 function doLogin(){
   var code=g('login-code').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
