@@ -129,10 +129,10 @@ document.addEventListener('click',function(e){if(!NAV_OPEN)return;if(!e.target.c
 var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('.nav-btn').forEach(function(t){t.classList.remove('on');});
   var el=g('page-'+page);if(el)el.classList.add('on');
   var nc=g('nav-current');if(nc)nc.textContent=PL[page]||page;
-  document.querySelectorAll('.tab').forEach(function(t){if(t.textContent===(PL[page]||page))t.classList.add('on');});
+  document.querySelectorAll('.nav-btn').forEach(function(t){if(t.textContent.trim().startsWith(PL[page]||page))t.classList.add('on');});
   document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){b.classList.remove('active-page');if(b.getAttribute('data-page')===page)b.classList.add('active-page');});
   if(page==='resumo')renderResumo();
   else if(page==='entradas'){setTd('sl-dt');setTd('pv-dt');renderEntradas();}
