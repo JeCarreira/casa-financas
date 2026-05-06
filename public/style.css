@@ -124,9 +124,4 @@ hr{border:none;border-top:.5px solid var(--border);margin:1.1rem 0;}
   .mobile-menu-open,.mobile-menu-closed{display:none!important;}
 }
 
-/* DROPDOWN NAV */
-.nav-dropdown{position:relative;display:inline-block;}
-.nav-dropdown .dd-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:160px;padding:4px;}
-.nav-dropdown .dd-menu button{display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:transparent;font-family:'Karla',sans-serif;font-size:13px;color:var(--t);cursor:pointer;border-radius:6px;}
-.nav-dropdown .dd-menu button:hover{background:var(--surface2);}
-.nav-dropdown.open .dd-menu{display:block;}
+.nav-sep{color:var(--border2);padding:0 2px;font-size:12px;line-height:1;align-self:center;flex-shrink:0;}
