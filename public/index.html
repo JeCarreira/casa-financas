@@ -203,7 +203,38 @@
     <!-- DESAFIOS -->
     <div class="page" id="page-desafios">
       <h1>Desafios</h1><p class="sub">Pequenos desafios para construir bons hábitos financeiros.</p>
-      <div class="card"><div class="ct">Criar desafio</div><div class="fr"><div class="fg" style="flex:2;"><label>Nome</label><input id="ch-nome" placeholder="ex: Sem compras supérfluas em maio"></div><div class="fg"><label>Meta (€)</label><input id="ch-meta" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Duração (semanas)</label><input id="ch-dur" type="number" placeholder="4" min="1"></div><div class="fg"><label>Data início</label><input id="ch-ini" type="date"></div></div><div class="fr"><div class="fg"><label>Descrição</label><input id="ch-desc" placeholder="detalha o desafio..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesafio()">+ Criar</button></div></div></div>
+
+      <!-- GERADOR DE DESAFIO DE POUPANÇA -->
+      <div class="card" style="border-color:var(--accent);">
+        <div class="ct" style="color:var(--accent);">Desafio de poupança — gerador</div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:.9rem;">Define a tua meta, quantos meses tens e em que mês começas. A app divide automaticamente em semanas e acompanha o teu progresso.</p>
+        <div class="fr">
+          <div class="fg"><label>Meta (€)</label><input type="number" id="dp-meta" value="1000" min="50" step="50"></div>
+          <div class="fg"><label>Nº de meses</label><select id="dp-meses"><option value="2">2 meses</option><option value="3">3 meses</option><option value="4" selected>4 meses</option><option value="5">5 meses</option><option value="6">6 meses</option><option value="8">8 meses</option><option value="12">12 meses</option></select></div>
+          <div class="fg"><label>Mês de início</label><select id="dp-mes-inicio"></select></div>
+          <div style="align-self:flex-end;"><button class="btn ba" onclick="gerarDesafioPoupanca()">Gerar desafio</button></div>
+        </div>
+        <div id="dp-stats" style="display:none;">
+          <div class="metrics" style="margin:.7rem 0 .5rem;" id="dp-metrics"></div>
+          <div style="margin-bottom:.5rem;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:4px;"><span>Progresso</span><span id="dp-pct">0%</span></div><div class="pbar"><div class="pfill" id="dp-pfill" style="width:0%;background:var(--accent);"></div></div></div>
+        </div>
+        <div id="dp-content" style="display:none;margin-top:.7rem;">
+          <div style="display:grid;grid-template-columns:1fr 240px;gap:1rem;align-items:start;">
+            <div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Semanas do desafio</div>
+              <div id="dp-semanas"></div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--rlg);padding:1rem;position:sticky;top:12px;">
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Por mês</div>
+              <div id="dp-resumo-meses"></div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin:.9rem 0 .5rem;">Mapa de depósitos</div>
+              <div id="dp-mapa" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card"><div class="ct">Criar desafio personalizado</div><div class="fr"><div class="fg" style="flex:2;"><label>Nome</label><input id="ch-nome" placeholder="ex: Sem compras supérfluas em maio"></div><div class="fg"><label>Meta (€)</label><input id="ch-meta" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Duração (semanas)</label><input id="ch-dur" type="number" placeholder="4" min="1"></div><div class="fg"><label>Data início</label><input id="ch-ini" type="date"></div></div><div class="fr"><div class="fg"><label>Descrição</label><input id="ch-desc" placeholder="detalha o desafio..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesafio()">+ Criar</button></div></div></div>
       <div class="card" style="background:var(--surface2);border-style:dashed;"><div class="ct">Desafios sugeridos</div><div id="desafios-sugeridos"></div></div>
       <div id="lst-desafios"></div>
     </div>
