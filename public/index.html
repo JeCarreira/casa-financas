@@ -42,14 +42,14 @@
     <button class="tab" onclick="go('reservas')">Reservas</button>
     <button class="tab" onclick="go('mentor')">Mentor IA</button>
     <div class="nav-dropdown" id="nav-dd-portugal">
-      <button class="tab" onclick="toggleDD('nav-dd-portugal')">Portugal ▾</button>
+      <button class="tab" onclick="toggleDD('nav-dd-portugal',event)">Portugal ▾</button>
       <div class="dd-menu">
         <button onclick="go('boca');closeDD()">Casa Portugal</button>
         <button onclick="go('renda');closeDD()">Renda Portugal</button>
       </div>
     </div>
     <div class="nav-dropdown" id="nav-dd-mais">
-      <button class="tab" onclick="toggleDD('nav-dd-mais')">Mais ▾</button>
+      <button class="tab" onclick="toggleDD('nav-dd-mais',event)">Mais ▾</button>
       <div class="dd-menu">
         <button onclick="go('desejos');closeDD()">Desejos</button>
         <button onclick="go('desafios');closeDD()">Desafios</button>
