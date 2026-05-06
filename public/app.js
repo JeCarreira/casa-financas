@@ -117,18 +117,6 @@ function doLogin(){
 window.addEventListener('load',function(){var last=localStorage.getItem('cf_last_code');if(last){g('login-code').value=last;doLogin();}});
 
 
-function toggleDD(id,event){
-  if(event)event.stopPropagation();
-  var el=document.getElementById(id);
-  if(!el)return;
-  var isOpen=el.classList.contains('open');
-  document.querySelectorAll('.nav-dropdown').forEach(function(d){d.classList.remove('open');});
-  if(!isOpen)el.classList.add('open');
-}
-function closeDD(){
-  document.querySelectorAll('.nav-dropdown').forEach(function(d){d.classList.remove('open');});
-}
-// dropdown close handled in main click listener
 
 function toggleNav(){
   NAV_OPEN=!NAV_OPEN;
@@ -136,7 +124,7 @@ function toggleNav(){
   if(menu)menu.className=NAV_OPEN?'mobile-menu-open':'mobile-menu-closed';
   if(btn)btn.className='hamburger-btn'+(NAV_OPEN?' open':'');
 }
-document.addEventListener('click',function(e){if(!e.target.closest('.nav-dropdown'))closeDD();if(!NAV_OPEN)return;if(!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){NAV_OPEN=false;var m=g('mobile-menu');if(m)m.className='mobile-menu-closed';var b=document.querySelector('.hamburger-btn');if(b)b.className='hamburger-btn';}});
+document.addEventListener('click',function(e){if(!NAV_OPEN)return;if(!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){NAV_OPEN=false;var m=g('mobile-menu');if(m)m.className='mobile-menu-closed';var b=document.querySelector('.hamburger-btn');if(b)b.className='hamburger-btn';}});
 
 var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
 function go(page){
@@ -146,7 +134,6 @@ function go(page){
   var nc=g('nav-current');if(nc)nc.textContent=PL[page]||page;
   document.querySelectorAll('.tab').forEach(function(t){if(t.textContent===(PL[page]||page))t.classList.add('on');});
   document.querySelectorAll('.mobile-menu-grid button').forEach(function(b){b.classList.remove('active-page');if(b.getAttribute('data-page')===page)b.classList.add('active-page');});
-  closeDD();
   if(page==='resumo')renderResumo();
   else if(page==='entradas'){setTd('sl-dt');setTd('pv-dt');renderEntradas();}
   else if(page==='despesas'){setTd('da-dt');renderDesp();}
