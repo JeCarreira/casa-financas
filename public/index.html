@@ -40,13 +40,23 @@
     <button class="tab" onclick="go('diario')">Diário</button>
     <button class="tab" onclick="go('objetivos')">Objetivos</button>
     <button class="tab" onclick="go('reservas')">Reservas</button>
-    <button class="tab" onclick="go('desejos')">Desejos</button>
-    <button class="tab" onclick="go('desafios')">Desafios</button>
     <button class="tab" onclick="go('mentor')">Mentor IA</button>
-    <button class="tab" onclick="go('investir')">Investir</button>
-    <button class="tab" onclick="go('dicas')">Dicas</button>
-    <button class="tab" onclick="go('boca')">Casa Portugal</button>
-    <button class="tab" onclick="go('renda')">Renda Portugal</button>
+    <div class="nav-dropdown" id="nav-dd-portugal">
+      <button class="tab" onclick="toggleDD('nav-dd-portugal')">Portugal ▾</button>
+      <div class="dd-menu">
+        <button onclick="go('boca');closeDD()">Casa Portugal</button>
+        <button onclick="go('renda');closeDD()">Renda Portugal</button>
+      </div>
+    </div>
+    <div class="nav-dropdown" id="nav-dd-mais">
+      <button class="tab" onclick="toggleDD('nav-dd-mais')">Mais ▾</button>
+      <div class="dd-menu">
+        <button onclick="go('desejos');closeDD()">Desejos</button>
+        <button onclick="go('desafios');closeDD()">Desafios</button>
+        <button onclick="go('investir');closeDD()">Investir</button>
+        <button onclick="go('dicas');closeDD()">Dicas</button>
+      </div>
+    </div>
   </div>
   <div class="sync-ind"><div class="dot" id="sync-dot"></div><span id="sync-lbl">guardado</span></div>
 </nav>
@@ -66,19 +76,19 @@
 <!-- MOBILE MENU DROPDOWN -->
 <div id="mobile-menu" class="mobile-menu-closed">
   <div class="mobile-menu-grid">
-    <button data-page="resumo" onclick="go('resumo');toggleNav()">📊 Resumo</button>
-    <button data-page="entradas" onclick="go('entradas');toggleNav()">💰 Entradas</button>
-    <button data-page="despesas" onclick="go('despesas');toggleNav()">🧾 Despesas</button>
-    <button data-page="diario" onclick="go('diario');toggleNav()">📝 Diário</button>
-    <button data-page="objetivos" onclick="go('objetivos');toggleNav()">🎯 Objetivos</button>
-    <button data-page="desafios" onclick="go('desafios');toggleNav()">🏆 Desafios</button>
-    <button data-page="desejos" onclick="go('desejos');toggleNav()">🛍 Desejos</button>
-    <button data-page="mentor" onclick="go('mentor');toggleNav()">🤖 Mentor IA</button>
-    <button data-page="investir" onclick="go('investir');toggleNav()">📈 Investir</button>
-    <button data-page="dicas" onclick="go('dicas');toggleNav()">💡 Dicas</button>
-    <button data-page="boca" onclick="go('boca');toggleNav()">🏠 Casa Portugal</button>
-    <button data-page="renda" onclick="go('renda');toggleNav()">💶 Renda Portugal</button>
-    <button data-page="reservas" onclick="go('reservas');toggleNav()">🐷 Reservas</button>
+    <button data-page="resumo" onclick="go('resumo');toggleNav()">Resumo</button>
+    <button data-page="entradas" onclick="go('entradas');toggleNav()">Entradas</button>
+    <button data-page="despesas" onclick="go('despesas');toggleNav()">Despesas</button>
+    <button data-page="diario" onclick="go('diario');toggleNav()">Diário</button>
+    <button data-page="objetivos" onclick="go('objetivos');toggleNav()">Objetivos</button>
+    <button data-page="reservas" onclick="go('reservas');toggleNav()">Reservas</button>
+    <button data-page="mentor" onclick="go('mentor');toggleNav()">Mentor IA</button>
+    <button data-page="desejos" onclick="go('desejos');toggleNav()">Desejos</button>
+    <button data-page="desafios" onclick="go('desafios');toggleNav()">Desafios</button>
+    <button data-page="investir" onclick="go('investir');toggleNav()">Investir</button>
+    <button data-page="dicas" onclick="go('dicas');toggleNav()">Dicas</button>
+    <button data-page="boca" onclick="go('boca');toggleNav()">Casa Portugal</button>
+    <button data-page="renda" onclick="go('renda');toggleNav()">Renda Portugal</button>
   </div>
 </div>
 
