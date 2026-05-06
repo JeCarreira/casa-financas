@@ -139,7 +139,7 @@ function go(page){
   else if(page==='despesas'){setTd('da-dt');renderDesp();}
   else if(page==='diario'){setTd('dr-dt');renderDiar();}
   else if(page==='objetivos')renderObjs();
-  else if(page==='desafios')renderDesafios();
+  else if(page==='desafios'){renderDesafios();initDPSelect();}
   else if(page==='desejos'){renderDesejos();analisarDesejos();}
   else if(page==='investir')renderInvestir();
   else if(page==='dicas')renderDicas();
@@ -519,6 +519,153 @@ function renderObjs(){var el=g('lst-objetivos');if(!el)return;if(!objetivos.leng
 
 // DESAFIOS
 var DS=[{nivel:'Iniciante',nome:'Registo diário 7 dias',desc:'Regista TODOS os gastos durante 7 dias.',meta:0,dur:1,passos:['Dia 1: Regista o primeiro gasto','Dia 2: Regista tudo incluindo cafés','Dia 3: Compara com o dia anterior','Dia 4: Tenta prever quanto vais gastar','Dia 5: Identifica onde gastas mais','Dia 6: Reduz esse gasto em 20%','Dia 7: Balanço da semana']},{nivel:'Iniciante',nome:'Semana sem compras impulsivas',desc:'7 dias sem comprar nada fora da lista.',meta:0,dur:1,passos:['Faz a lista antes de sair','Compra só o que está na lista','Anota o que quiseste comprar mas não compraste','Soma o que poupaste']},{nivel:'Iniciante',nome:'Poupar 50€ este mês',desc:'O primeiro passo para o hábito de poupar.',meta:50,dur:4,passos:['Semana 1: Identifica onde cortar 12,50€','Semana 2: Transfere 12,50€','Semana 3: Repete','Semana 4: Completa os 50€!']},{nivel:'Intermédio',nome:'30 dias sem compras supérfluas',desc:'Um mês sem roupa, gadgets ou decoração.',meta:0,dur:4,passos:['Semana 1: Define por escrito o que é supérfluo','Semana 2: Quando quiseres comprar algo, espera 48h','Semana 3: Substitui shopping por actividades gratuitas','Semana 4: Soma o que poupaste']},{nivel:'Intermédio',nome:'Reserva de emergência 500€',desc:'500€ intocáveis.',meta:500,dur:8,passos:['Semana 1-2: Identifica onde cortar','Semana 3-4: Poupa os primeiros 125€','Semana 5-6: Mais 125€','Semana 7-8: Conclui os 500€']},{nivel:'Avançado',nome:'Desafio 52 semanas',desc:'Semana 1: 1€. Semana 52: 52€. Total: 1.378€.',meta:1378,dur:52,passos:['Semanas 1-10: 1€ a 10€/sem.','Semanas 11-20: 11€ a 20€/sem.','Semanas 21-30: 21€ a 30€/sem.','Semanas 31-40: 31€ a 40€/sem.','Semanas 41-52: 41€ a 52€/sem.']},{nivel:'Avançado',nome:'Organiza as finanças do zero',desc:'Plano completo em 4 semanas.',meta:0,dur:4,passos:['Semana 1: Lista rendimentos, despesas e dívidas.','Semana 2: Cria orçamento 50/30/20.','Semana 3: Conta poupança + transferência automática.','Semana 4: Define 3 objetivos com valores e prazos.']}];
+
+// ===== DESAFIO POUPANÇA =====
+var DP_SEMANAS = [];
+var DP_CHECKS = {};
+var MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function initDPSelect(){
+  var sel = g('dp-mes-inicio');
+  if(!sel||sel.options.length>0)return;
+  var hoje = new Date();
+  for(var i=0;i<12;i++){
+    var d = new Date(hoje.getFullYear(), hoje.getMonth()+i, 1);
+    var opt = document.createElement('option');
+    opt.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    opt.textContent = MESES_PT[d.getMonth()]+' '+d.getFullYear();
+    sel.appendChild(opt);
+  }
+}
+
+function gerarDesafioPoupanca(){
+  var meta = parseFloat(g('dp-meta').value)||1000;
+  var nMeses = parseInt(g('dp-meses').value)||4;
+  var mesInicio = g('dp-mes-inicio').value;
+  if(!mesInicio){alert('Selecciona o mês de início.');return;}
+
+  // Load saved checks
+  var savedKey = LS_KEY+'_dp_'+meta+'_'+nMeses+'_'+mesInicio;
+  try{var sc=localStorage.getItem(savedKey);if(sc)DP_CHECKS=JSON.parse(sc);}catch(e){DP_CHECKS={};}
+
+  DP_SEMANAS = [];
+  var ano = parseInt(mesInicio.slice(0,4));
+  var mes = parseInt(mesInicio.slice(5,7))-1;
+  var semanaIdx = 1;
+  var totalSemanas = 0;
+
+  // Generate weeks for each month
+  for(var m=0;m<nMeses;m++){
+    var d = new Date(ano, mes+m, 1);
+    var diasMes = new Date(ano, mes+m+1, 0).getDate();
+    var semanasNesteMes = Math.ceil(diasMes/7);
+    for(var s=0;s<semanasNesteMes;s++){
+      var diaInicio = s*7+1;
+      var diaFim = Math.min((s+1)*7, diasMes);
+      var diasSemana = diaFim - diaInicio + 1;
+      DP_SEMANAS.push({
+        idx: semanaIdx,
+        mes: d.getMonth(),
+        ano: d.getFullYear(),
+        mesNome: MESES_PT[d.getMonth()],
+        semMes: s+1,
+        diasSemana: diasSemana,
+        id: 'S'+semanaIdx
+      });
+      semanaIdx++;
+      totalSemanas++;
+    }
+  }
+
+  // Calculate value per day and per week
+  var totalDias = DP_SEMANAS.reduce(function(s,w){return s+w.diasSemana;},0);
+  var valorDia = meta/totalDias;
+  DP_SEMANAS.forEach(function(s){s.valor = Math.round(s.diasSemana*valorDia);});
+
+  // Fix rounding - add/remove cents from last week
+  var totalCalc = DP_SEMANAS.reduce(function(s,w){return s+w.valor;},0);
+  DP_SEMANAS[DP_SEMANAS.length-1].valor += meta - totalCalc;
+
+  // Store key for saving
+  DP_SEMANAS._saveKey = savedKey;
+
+  renderDP();
+  g('dp-stats').style.display='block';
+  g('dp-content').style.display='block';
+}
+
+function dpToggleCheck(id){
+  DP_CHECKS[id] = !DP_CHECKS[id];
+  try{var sk=LS_KEY+'_dp_'+g('dp-meta').value+'_'+g('dp-meses').value+'_'+g('dp-mes-inicio').value;localStorage.setItem(sk,JSON.stringify(DP_CHECKS));}catch(e){}
+  renderDP();
+}
+
+function renderDP(){
+  if(!DP_SEMANAS.length)return;
+  var meta = parseFloat(g('dp-meta').value)||1000;
+  var poupado = DP_SEMANAS.filter(function(s){return DP_CHECKS[s.id];}).reduce(function(acc,s){return acc+s.valor;},0);
+  var falta = meta - poupado;
+  var feitas = DP_SEMANAS.filter(function(s){return DP_CHECKS[s.id];}).length;
+  var pct = meta>0?Math.round((poupado/meta)*100):0;
+
+  // Stats
+  g('dp-metrics').innerHTML =
+    '<div class="metric"><div class="ml">Meta</div><div class="mv" style="font-size:18px;">'+meta+'€</div></div>'+
+    '<div class="metric"><div class="ml">Poupado</div><div class="mv" style="font-size:18px;color:var(--green);">'+poupado+'€</div></div>'+
+    '<div class="metric"><div class="ml">Em falta</div><div class="mv" style="font-size:18px;color:var(--red);">'+falta+'€</div></div>'+
+    '<div class="metric"><div class="ml">Semanas</div><div class="mv" style="font-size:18px;">'+feitas+' / '+DP_SEMANAS.length+'</div></div>';
+  g('dp-pct').textContent = pct+'%';
+  g('dp-pfill').style.width = pct+'%';
+
+  // Group by month
+  var byMes = {};
+  DP_SEMANAS.forEach(function(s){
+    var k = s.ano+'-'+s.mes;
+    if(!byMes[k])byMes[k]={nome:s.mesNome,total:0,poupado:0};
+    byMes[k].total += s.valor;
+    if(DP_CHECKS[s.id])byMes[k].poupado += s.valor;
+  });
+
+  // Semanas list
+  var html = '';
+  var lastMes = '';
+  DP_SEMANAS.forEach(function(s){
+    var mesKey = s.ano+'-'+s.mes;
+    if(mesKey !== lastMes){
+      html += '<div style="font-family:var(--font-serif,Georgia),serif;font-style:italic;font-size:18px;color:var(--t);margin:1rem 0 .5rem;">'+s.mesNome+'</div>';
+      lastMes = mesKey;
+    }
+    var done = DP_CHECKS[s.id];
+    html += '<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.7rem 1rem;margin-bottom:5px;'+(done?'opacity:.55;':'')+'">'+
+      '<div style="width:30px;height:30px;border-radius:50%;background:'+(done?'var(--accent)':'var(--surface2)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+(done?'#fff':'var(--t3)')+';flex-shrink:0;">S'+s.idx+'</div>'+
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">Semana '+s.idx+' · '+s.mesNome+'</div><div style="font-size:11px;color:var(--t3);">Semana '+s.semMes+' do mês · '+s.diasSemana+' dias</div></div>'+
+      '<div style="font-size:13px;color:var(--t2);margin-right:8px;">'+(done?'<strong style="color:var(--accent);">'+s.valor+'€</strong>':'0€')+' / <strong>'+s.valor+'€</strong></div>'+
+      '<div onclick="dpToggleCheck(this.getAttribute(\'data-sid\'))" data-sid="'+s.id+'" style="width:26px;height:26px;border-radius:50%;border:1.5px solid '+(done?'var(--accent)':'var(--border2)')+';background:'+(done?'var(--accent)':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:'+(done?'#fff':'transparent')+';flex-shrink:0;">'+(done?'✓':'')+'</div>'+
+      '</div>';
+  });
+  g('dp-semanas').innerHTML = html;
+
+  // Resumo meses
+  var rHtml = '';
+  Object.entries(byMes).forEach(function(e){
+    var k=e[0],m=e[1];
+    var mp = m.total>0?Math.round((m.poupado/m.total)*100):0;
+    rHtml += '<div style="padding:7px 0;border-bottom:.5px solid var(--border);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">'+
+      '<span style="font-family:var(--font-serif,Georgia),serif;font-style:italic;font-size:15px;">'+m.nome+'</span>'+
+      '<div style="text-align:right;"><div style="font-size:13px;color:var(--accent);font-weight:500;">'+m.poupado+'€</div><div style="font-size:11px;color:var(--t3);">de '+m.total+'€</div></div></div>'+
+      '<div class="pbar"><div class="pfill" style="width:'+mp+'%;background:var(--accent);"></div></div></div>';
+  });
+  g('dp-resumo-meses').innerHTML = rHtml;
+
+  // Mapa
+  var mapaHtml = '';
+  DP_SEMANAS.forEach(function(s){
+    mapaHtml += '<div title="S'+s.idx+': '+s.valor+'€" data-sid="'+s.id+'" style="aspect-ratio:1;border-radius:3px;background:'+(DP_CHECKS[s.id]?'var(--accent)':'var(--surface2)')+';cursor:pointer;" onclick="dpToggleCheck(this.getAttribute(\'data-sid\'))"></div>';
+  });
+  g('dp-mapa').innerHTML = mapaHtml;
+}
+
 function renderDesafiosSugeridos(){var el=g('desafios-sugeridos');if(!el)return;var niveis=['Iniciante','Intermédio','Avançado'],corN={Iniciante:'var(--green)',Intermédio:'var(--amber)',Avançado:'var(--red)'},html='';niveis.forEach(function(n){html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:'+corN[n]+';padding:8px 0 5px;border-bottom:.5px solid var(--border);margin-bottom:6px;">'+n+'</div>';DS.filter(function(d){return d.nivel===n;}).forEach(function(ds){html+='<div class="desafio-sug"><div><div style="font-size:13px;font-weight:500;">'+ds.nome+'</div><div style="font-size:12px;color:var(--t2);">'+ds.desc+'</div></div><button class="btn ba bsm" onclick="adoptDesafio('+DS.indexOf(ds)+')" style="flex-shrink:0;">Adoptar</button></div>';});});el.innerHTML=html;}
 function adoptDesafio(i){var ds=DS[i];desafios.push({id:uid(),nome:ds.nome,desc:ds.desc,meta:ds.meta,dur:ds.dur,nivel:ds.nivel,inicio:today(),passos:ds.passos,checks:[],progresso:0,concluido:false});saveAll();renderDesafios();go('desafios');}
 function addDesafio(){var nome=g('ch-nome').value.trim();if(!nome)return alert('Preenche o nome.');desafios.push({id:uid(),nome:nome,desc:g('ch-desc').value.trim(),meta:parseFloat(g('ch-meta').value)||0,dur:parseInt(g('ch-dur').value)||4,nivel:'Personalizado',inicio:g('ch-ini').value||today(),passos:[],checks:[],progresso:0,concluido:false});['ch-nome','ch-meta','ch-dur','ch-ini','ch-desc'].forEach(function(id){g(id).value='';});saveAll();renderDesafios();}
