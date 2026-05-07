@@ -75,7 +75,7 @@ function loadAndStart(){
 
 
 function resetSecao(secao){
-  var nomes={entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',reservas:'Reservas',desejos:'Desejos',desafios:'Desafios',boca:'Casa Portugal',renda:'Renda Portugal',tudo:'TUDO (conta inteira)'};
+  var nomes={entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',reservas:'Reservas',desejos:'Desejos',boca:'Casa Portugal',renda:'Renda Portugal',tudo:'TUDO (conta inteira)'};
   var nome=nomes[secao]||secao;
   if(!confirm('Apagar todos os dados de: '+nome+'?\n\nEsta acção não pode ser desfeita.'))return;
   if(secao==='entradas'){entradas=[];}
@@ -126,7 +126,7 @@ function toggleNav(){
 }
 document.addEventListener('click',function(e){if(!NAV_OPEN)return;if(!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){NAV_OPEN=false;var m=g('mobile-menu');if(m)m.className='mobile-menu-closed';var b=document.querySelector('.hamburger-btn');if(b)b.className='hamburger-btn';}});
 
-var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
+var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.nav-btn').forEach(function(t){t.classList.remove('on');});
@@ -139,7 +139,7 @@ function go(page){
   else if(page==='despesas'){setTd('da-dt');renderDesp();}
   else if(page==='diario'){setTd('dr-dt');renderDiar();}
   else if(page==='objetivos')renderObjs();
-  else if(page==='desafios'){renderDesafios();initDPSelect();}
+  else if(page==='desafios'){renderDesafiosSugeridos();}
   else if(page==='desejos'){renderDesejos();analisarDesejos();}
   else if(page==='investir')renderInvestir();
   else if(page==='dicas')renderDicas();
@@ -519,6 +519,115 @@ function renderObjs(){var el=g('lst-objetivos');if(!el)return;if(!objetivos.leng
 
 // DESAFIOS
 var DS=[{nivel:'Iniciante',nome:'Registo diário 7 dias',desc:'Regista TODOS os gastos durante 7 dias.',meta:0,dur:1,passos:['Dia 1: Regista o primeiro gasto','Dia 2: Regista tudo incluindo cafés','Dia 3: Compara com o dia anterior','Dia 4: Tenta prever quanto vais gastar','Dia 5: Identifica onde gastas mais','Dia 6: Reduz esse gasto em 20%','Dia 7: Balanço da semana']},{nivel:'Iniciante',nome:'Semana sem compras impulsivas',desc:'7 dias sem comprar nada fora da lista.',meta:0,dur:1,passos:['Faz a lista antes de sair','Compra só o que está na lista','Anota o que quiseste comprar mas não compraste','Soma o que poupaste']},{nivel:'Iniciante',nome:'Poupar 50€ este mês',desc:'O primeiro passo para o hábito de poupar.',meta:50,dur:4,passos:['Semana 1: Identifica onde cortar 12,50€','Semana 2: Transfere 12,50€','Semana 3: Repete','Semana 4: Completa os 50€!']},{nivel:'Intermédio',nome:'30 dias sem compras supérfluas',desc:'Um mês sem roupa, gadgets ou decoração.',meta:0,dur:4,passos:['Semana 1: Define por escrito o que é supérfluo','Semana 2: Quando quiseres comprar algo, espera 48h','Semana 3: Substitui shopping por actividades gratuitas','Semana 4: Soma o que poupaste']},{nivel:'Intermédio',nome:'Reserva de emergência 500€',desc:'500€ intocáveis.',meta:500,dur:8,passos:['Semana 1-2: Identifica onde cortar','Semana 3-4: Poupa os primeiros 125€','Semana 5-6: Mais 125€','Semana 7-8: Conclui os 500€']},{nivel:'Avançado',nome:'Desafio 52 semanas',desc:'Semana 1: 1€. Semana 52: 52€. Total: 1.378€.',meta:1378,dur:52,passos:['Semanas 1-10: 1€ a 10€/sem.','Semanas 11-20: 11€ a 20€/sem.','Semanas 21-30: 21€ a 30€/sem.','Semanas 31-40: 31€ a 40€/sem.','Semanas 41-52: 41€ a 52€/sem.']},{nivel:'Avançado',nome:'Organiza as finanças do zero',desc:'Plano completo em 4 semanas.',meta:0,dur:4,passos:['Semana 1: Lista rendimentos, despesas e dívidas.','Semana 2: Cria orçamento 50/30/20.','Semana 3: Conta poupança + transferência automática.','Semana 4: Define 3 objetivos com valores e prazos.']}];
+
+
+// ===== DESAFIOS - NAVEGAÇÃO =====
+function abrirDesafio(tipo){
+  document.getElementById('painel-poupanca').style.display='none';
+  document.getElementById('painel-cofre').style.display='none';
+  document.getElementById('painel-depositos').style.display='none';
+  document.getElementById('painel-'+tipo).style.display='block';
+  document.querySelectorAll('.desafio-card-sel').forEach(function(c){c.style.display='none';});
+  if(tipo==='poupanca'){initDPSelect();}
+  if(tipo==='cofre'){renderCofre();}
+  if(tipo==='depositos'){renderDepositos();}
+}
+function fecharDesafio(){
+  document.getElementById('painel-poupanca').style.display='none';
+  document.getElementById('painel-cofre').style.display='none';
+  document.getElementById('painel-depositos').style.display='none';
+  document.querySelectorAll('.desafio-card-sel').forEach(function(c){c.style.display='block';});
+}
+
+// ===== COFRE =====
+var COFRE_DATA = {nome:'',meta:0,depositos:[]};
+function criarCofre(){
+  var nome=g('cofre-nome').value.trim(),meta=parseFloat(g('cofre-meta').value)||0;
+  if(!nome||!meta){alert('Preenche o nome e a meta.');return;}
+  COFRE_DATA={nome:nome,meta:meta,depositos:[]};
+  try{localStorage.setItem(LS_KEY+'_cofre',JSON.stringify(COFRE_DATA));}catch(e){}
+  renderCofre();
+}
+function loadCofre(){
+  try{var c=localStorage.getItem(LS_KEY+'_cofre');if(c)COFRE_DATA=JSON.parse(c);}catch(e){}
+}
+function addDeposioCofre(){
+  var val=parseFloat(g('cofre-dep-val').value)||0,nota=g('cofre-dep-nota').value.trim();
+  if(!val){alert('Insere um valor.');return;}
+  COFRE_DATA.depositos=COFRE_DATA.depositos||[];
+  COFRE_DATA.depositos.push({id:uid(),val:val,nota:nota,data:today()});
+  g('cofre-dep-val').value='';g('cofre-dep-nota').value='';
+  try{localStorage.setItem(LS_KEY+'_cofre',JSON.stringify(COFRE_DATA));}catch(e){}
+  renderCofre();
+}
+function delDepositoCofre(id){
+  COFRE_DATA.depositos=COFRE_DATA.depositos.filter(function(d){return d.id!==id;});
+  try{localStorage.setItem(LS_KEY+'_cofre',JSON.stringify(COFRE_DATA));}catch(e){}
+  renderCofre();
+}
+function renderCofre(){
+  loadCofre();
+  var el=g('cofre-content');if(!el)return;
+  if(!COFRE_DATA.nome){el.innerHTML='';return;}
+  var total=(COFRE_DATA.depositos||[]).reduce(function(s,d){return s+d.val;},0);
+  var meta=COFRE_DATA.meta,pct=meta>0?Math.min(Math.round((total/meta)*100),100):0;
+  var falta=Math.max(meta-total,0);
+  var html='<hr style="margin:.7rem 0;">'
+    +'<div class="metrics" style="margin-bottom:.7rem;">'
+    +'<div class="metric"><div class="ml">'+COFRE_DATA.nome+'</div><div class="mv" style="font-size:18px;color:var(--accent);">'+fmt(total)+'</div></div>'
+    +'<div class="metric"><div class="ml">Meta</div><div class="mv" style="font-size:18px;">'+fmt(meta)+'</div></div>'
+    +'<div class="metric"><div class="ml">Falta</div><div class="mv" style="font-size:18px;color:var(--red);">'+fmt(falta)+'</div></div>'
+    +'<div class="metric"><div class="ml">Progresso</div><div class="mv" style="font-size:18px;color:var(--green);">'+pct+'%</div></div>'
+    +'</div>'
+    +'<div style="margin-bottom:.9rem;"><div class="pbar" style="height:10px;"><div class="pfill" style="width:'+pct+'%;background:var(--accent);"></div></div></div>'
+    +'<div class="fr" style="margin-bottom:.7rem;"><div class="fg"><label>Valor guardado (€)</label><input id="cofre-dep-val" type="number" placeholder="ex: 50" step="0.01"></div><div class="fg"><label>Nota</label><input id="cofre-dep-nota" placeholder="ex: Poupei do almoço..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDeposioCofre()">+ Guardar</button></div></div>';
+  if((COFRE_DATA.depositos||[]).length){
+    html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.5rem;">Depósitos</div>';
+    html+=[...COFRE_DATA.depositos].reverse().map(function(d){
+      var did=d.id;return'<div class="li"><div class="ll"><div class="ln">'+fmt(d.val)+'</div><div class="ls">'+d.data+(d.nota?' · '+d.nota:'')+'</div></div><div class="lr"><button class="btn bd bxs" onclick="delDepositoCofre(this.getAttribute(\'data-id\'))" data-id="'+did+'">×</button></div></div>';
+    }).join('');
+  }
+  el.innerHTML=html;
+}
+
+// ===== DESAFIO X DEPÓSITOS =====
+var DD_CHECKS = {};
+function gerarDepositos(){
+  var num=parseInt(g('dd-num').value)||30,val=parseFloat(g('dd-val').value)||20;
+  var saveKey=LS_KEY+'_dd_'+num+'_'+val;
+  try{var sc=localStorage.getItem(saveKey);if(sc)DD_CHECKS=JSON.parse(sc);}catch(e){DD_CHECKS={};}
+  g('dd-content').style.display='block';
+  renderDepositos(num,val);
+}
+function toggleDD2(id,num,val){
+  DD_CHECKS[id]=!DD_CHECKS[id];
+  try{localStorage.setItem(LS_KEY+'_dd_'+num+'_'+val,JSON.stringify(DD_CHECKS));}catch(e){}
+  renderDepositos(num,val);
+}
+function renderDepositos(num,val){
+  num=num||parseInt(g('dd-num').value)||30;
+  val=val||parseFloat(g('dd-val').value)||20;
+  var el=g('dd-content');if(!el||el.style.display==='none')return;
+  var feitos=Object.values(DD_CHECKS).filter(Boolean).length;
+  var totalMeta=num*val,totalPoupado=feitos*val,pct=Math.round((feitos/num)*100);
+  g('dd-metrics').innerHTML=
+    '<div class="metric"><div class="ml">Total de depósitos</div><div class="mv" style="font-size:18px;">'+num+'</div></div>'+
+    '<div class="metric"><div class="ml">Feitos</div><div class="mv" style="font-size:18px;color:var(--green);">'+feitos+'</div></div>'+
+    '<div class="metric"><div class="ml">Poupado</div><div class="mv" style="font-size:18px;color:var(--accent);">'+fmt(totalPoupado)+'</div></div>'+
+    '<div class="metric"><div class="ml">Meta</div><div class="mv" style="font-size:18px;">'+fmt(totalMeta)+'</div></div>';
+  g('dd-pct').textContent=pct+'%';
+  g('dd-pfill').style.width=pct+'%';
+  var gridHtml='';
+  for(var i=1;i<=num;i++){
+    var ddid='dd'+i,done=DD_CHECKS[ddid];
+    var bg=done?'var(--accent)':'var(--surface2)',bc=done?'var(--accent)':'var(--border)',tc=done?'#fff':'var(--t3)',tc2=done?'#fff':'var(--t2)';
+    gridHtml+='<div data-ddid="'+ddid+'" data-num="'+num+'" data-val="'+val+'" onclick="var el=this;toggleDD2(el.getAttribute(\'data-ddid\'),parseInt(el.getAttribute(\'data-num\')),parseFloat(el.getAttribute(\'data-val\')))" style="background:'+bg+';border:1px solid '+bc+';border-radius:var(--rsm);padding:8px 4px;text-align:center;cursor:pointer;">'
+      +'<div style="font-size:10px;font-weight:600;color:'+tc+';">#'+i+'</div>'
+      +'<div style="font-size:11px;color:'+tc2+';">'+val+'€</div>'
+      +'</div>';
+  }
+  g('dd-grid').innerHTML=gridHtml;
+}
 
 // ===== DESAFIO POUPANÇA =====
 var DP_SEMANAS = [];
