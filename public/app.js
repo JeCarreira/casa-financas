@@ -140,7 +140,12 @@ function go(page){
   else if(page==='diario'){setTd('dr-dt');renderDiar();}
   else if(page==='objetivos')renderObjs();
   else if(page==='desafios'){renderDesafiosSugeridos();}
-  else if(page==='desafios'){fecharDesafio();}
+  else if(page==='desafios'){
+    try{
+      var ativo=localStorage.getItem(LS_KEY+'_desafio_ativo');
+      if(ativo){abrirDesafio(ativo);}else{fecharDesafio();}
+    }catch(e){fecharDesafio();}
+  }
   else if(page==='desejos'){renderDesejos();analisarDesejos();}
   else if(page==='investir')renderInvestir();
   else if(page==='dicas')renderDicas();
@@ -529,15 +534,33 @@ function abrirDesafio(tipo){
   document.getElementById('painel-depositos').style.display='none';
   document.getElementById('painel-'+tipo).style.display='block';
   document.querySelectorAll('.desafio-card-sel').forEach(function(c){c.style.display='none';});
-  if(tipo==='poupanca'){initDPSelect();}
+  // Save active panel
+  try{localStorage.setItem(LS_KEY+'_desafio_ativo',tipo);}catch(e){}
+  if(tipo==='poupanca'){initDPSelect();restaurarDP();}
   if(tipo==='cofre'){renderCofre();}
   if(tipo==='depositos'){renderDepositos();}
+}
+function restaurarDP(){
+  try{
+    var cfg=localStorage.getItem(LS_KEY+'_dp_config');
+    if(!cfg)return;
+    var c=JSON.parse(cfg);
+    // Set the fields
+    if(g('dp-meta'))g('dp-meta').value=c.meta;
+    if(g('dp-meses'))g('dp-meses').value=c.nMeses;
+    // Wait for select to be populated then set month
+    setTimeout(function(){
+      if(g('dp-mes-inicio'))g('dp-mes-inicio').value=c.mesInicio;
+      gerarDesafioPoupanca();
+    },50);
+  }catch(e){}
 }
 function fecharDesafio(){
   document.getElementById('painel-poupanca').style.display='none';
   document.getElementById('painel-cofre').style.display='none';
   document.getElementById('painel-depositos').style.display='none';
   document.querySelectorAll('.desafio-card-sel').forEach(function(c){c.style.display='block';});
+  try{localStorage.removeItem(LS_KEY+'_desafio_ativo');}catch(e){}
 }
 
 // ===== COFRE =====
@@ -696,8 +719,9 @@ function gerarDesafioPoupanca(){
   var totalCalc = DP_SEMANAS.reduce(function(s,w){return s+w.valor;},0);
   DP_SEMANAS[DP_SEMANAS.length-1].valor += meta - totalCalc;
 
-  // Store key for saving
-  DP_SEMANAS._saveKey = savedKey;
+  // Save config so it survives page reload
+  var dpConfig={meta:meta,nMeses:nMeses,mesInicio:mesInicio};
+  try{localStorage.setItem(LS_KEY+'_dp_config',JSON.stringify(dpConfig));}catch(e){}
 
   renderDP();
   g('dp-stats').style.display='block';
