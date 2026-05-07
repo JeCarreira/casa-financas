@@ -75,7 +75,7 @@ function loadAndStart(){
 
 
 function resetSecao(secao){
-  var nomes={entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',reservas:'Reservas',desejos:'Desejos',boca:'Casa Portugal',renda:'Renda Portugal',tudo:'TUDO (conta inteira)'};
+  var nomes={entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',reservas:'Reservas',desafios:'Desafios',desejos:'Desejos',boca:'Casa Portugal',renda:'Renda Portugal',tudo:'TUDO (conta inteira)'};
   var nome=nomes[secao]||secao;
   if(!confirm('Apagar todos os dados de: '+nome+'?\n\nEsta acção não pode ser desfeita.'))return;
   if(secao==='entradas'){entradas=[];}
@@ -126,7 +126,7 @@ function toggleNav(){
 }
 document.addEventListener('click',function(e){if(!NAV_OPEN)return;if(!e.target.closest('.hamburger-btn')&&!e.target.closest('.mobile-menu-grid')){NAV_OPEN=false;var m=g('mobile-menu');if(m)m.className='mobile-menu-closed';var b=document.querySelector('.hamburger-btn');if(b)b.className='hamburger-btn';}});
 
-var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
+var PL={resumo:'Resumo',entradas:'Entradas',despesas:'Despesas',diario:'Diário',objetivos:'Objetivos',desafios:'Desafios',desejos:'Desejos',mentor:'Mentor IA',investir:'Investir',dicas:'Dicas',boca:'Casa Portugal',renda:'Renda Portugal',reservas:'Reservas'};
 function go(page){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.nav-btn').forEach(function(t){t.classList.remove('on');});
@@ -140,6 +140,7 @@ function go(page){
   else if(page==='diario'){setTd('dr-dt');renderDiar();}
   else if(page==='objetivos')renderObjs();
   else if(page==='desafios'){renderDesafiosSugeridos();}
+  else if(page==='desafios'){fecharDesafio();}
   else if(page==='desejos'){renderDesejos();analisarDesejos();}
   else if(page==='investir')renderInvestir();
   else if(page==='dicas')renderDicas();
