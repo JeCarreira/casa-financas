@@ -244,3 +244,5 @@ hr { border: none; border-top: .5px solid var(--border); margin: 1rem 0; }
   .nav-mobile { display: none!important; }
   .mobile-menu-open, .mobile-menu-closed { display: none!important; }
 }
+
+.desafio-card-sel:hover{border-color:var(--accent)!important;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.08);}
