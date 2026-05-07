@@ -52,8 +52,7 @@
       <button class="nav-btn" onclick="go('objetivos')"><span class="nav-icon">◈</span>Objetivos</button>
       <button class="nav-btn" onclick="go('reservas')"><span class="nav-icon">◐</span>Reservas</button>
       <button class="nav-btn" onclick="go('desejos')"><span class="nav-icon">◇</span>Desejos</button>
-      <button class="nav-btn" onclick="go('desafios')"><span class="nav-icon">◆</span>Desafios</button>
-    </div>
+          </div>
 
     <div class="nav-section">
       <div class="nav-section-label">Aprender</div>
@@ -88,8 +87,7 @@
       <button data-page="objetivos" onclick="go('objetivos');toggleNav()">Objetivos</button>
       <button data-page="reservas" onclick="go('reservas');toggleNav()">Reservas</button>
       <button data-page="desejos" onclick="go('desejos');toggleNav()">Desejos</button>
-      <button data-page="desafios" onclick="go('desafios');toggleNav()">Desafios</button>
-      <button data-page="mentor" onclick="go('mentor');toggleNav()">Mentor IA</button>
+            <button data-page="mentor" onclick="go('mentor');toggleNav()">Mentor IA</button>
       <button data-page="investir" onclick="go('investir');toggleNav()">Investir</button>
       <button data-page="dicas" onclick="go('dicas');toggleNav()">Dicas</button>
       <button data-page="boca" onclick="go('boca');toggleNav()">Casa Portugal</button>
@@ -202,41 +200,107 @@
 
     <!-- DESAFIOS -->
     <div class="page" id="page-desafios">
-      <h1>Desafios</h1><p class="sub">Pequenos desafios para construir bons hábitos financeiros.</p>
+      <h1>Desafios</h1>
+      <p class="sub">Escolhe um desafio e acompanha o teu progresso.</p>
 
-      <!-- GERADOR DE DESAFIO DE POUPANÇA -->
-      <div class="card" style="border-color:var(--accent);">
-        <div class="ct" style="color:var(--accent);">Desafio de poupança — gerador</div>
-        <p style="font-size:12px;color:var(--t2);margin-bottom:.9rem;">Define a tua meta, quantos meses tens e em que mês começas. A app divide automaticamente em semanas e acompanha o teu progresso.</p>
-        <div class="fr">
-          <div class="fg"><label>Meta (€)</label><input type="number" id="dp-meta" value="1000" min="50" step="50"></div>
-          <div class="fg"><label>Nº de meses</label><select id="dp-meses"><option value="2">2 meses</option><option value="3">3 meses</option><option value="4" selected>4 meses</option><option value="5">5 meses</option><option value="6">6 meses</option><option value="8">8 meses</option><option value="12">12 meses</option></select></div>
-          <div class="fg"><label>Mês de início</label><select id="dp-mes-inicio"></select></div>
-          <div style="align-self:flex-end;"><button class="btn ba" onclick="gerarDesafioPoupanca()">Gerar desafio</button></div>
+      <!-- CARDS DE DESAFIOS -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:1.2rem;">
+        <div class="desafio-card-sel" onclick="abrirDesafio('poupanca')" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:1.3rem;cursor:pointer;transition:all .15s;">
+          <div style="font-size:28px;margin-bottom:.6rem;">🎯</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Desafio Poupança</div>
+          <div style="font-size:12px;color:var(--t2);">Define uma meta e divide em depósitos semanais ao longo de meses. Vai marcando o que já poupaste.</div>
+          <div style="margin-top:.9rem;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);">Depósitos semanais →</div>
         </div>
-        <div id="dp-stats" style="display:none;">
-          <div class="metrics" style="margin:.7rem 0 .5rem;" id="dp-metrics"></div>
-          <div style="margin-bottom:.5rem;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:4px;"><span>Progresso</span><span id="dp-pct">0%</span></div><div class="pbar"><div class="pfill" id="dp-pfill" style="width:0%;background:var(--accent);"></div></div></div>
+        <div class="desafio-card-sel" onclick="abrirDesafio('cofre')" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:1.3rem;cursor:pointer;transition:all .15s;">
+          <div style="font-size:28px;margin-bottom:.6rem;">🏦</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Cofre de Poupança</div>
+          <div style="font-size:12px;color:var(--t2);">Regista cada vez que guardas dinheiro no cofre. Acompanha o total guardado e o progresso até à meta.</div>
+          <div style="margin-top:.9rem;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);">Registo livre →</div>
         </div>
-        <div id="dp-content" style="display:none;margin-top:.7rem;">
-          <div style="display:grid;grid-template-columns:1fr 240px;gap:1rem;align-items:start;">
-            <div>
-              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Semanas do desafio</div>
-              <div id="dp-semanas"></div>
-            </div>
-            <div style="background:var(--surface2);border-radius:var(--rlg);padding:1rem;position:sticky;top:12px;">
-              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Por mês</div>
-              <div id="dp-resumo-meses"></div>
-              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin:.9rem 0 .5rem;">Mapa de depósitos</div>
-              <div id="dp-mapa" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+        <div class="desafio-card-sel" onclick="abrirDesafio('depositos')" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:1.3rem;cursor:pointer;transition:all .15s;">
+          <div style="font-size:28px;margin-bottom:.6rem;">📅</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Desafio X Depósitos</div>
+          <div style="font-size:12px;color:var(--t2);">Compromete-te a fazer um número fixo de depósitos. Cada vez que guardas, marca um depósito como feito.</div>
+          <div style="margin-top:.9rem;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);">Depósitos fixos →</div>
+        </div>
+      </div>
+
+      <!-- PAINEL DESAFIO POUPANÇA -->
+      <div id="painel-poupanca" style="display:none;">
+        <div class="card" style="border-color:var(--accent);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">
+            <div class="ct" style="color:var(--accent);margin-bottom:0;">🎯 Desafio Poupança</div>
+            <button class="btn bg bsm" onclick="fecharDesafio()">← Voltar</button>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Meta (€)</label><input type="number" id="dp-meta" value="1000" min="50" step="50"></div>
+            <div class="fg"><label>Nº de meses</label><select id="dp-meses"><option value="2">2 meses</option><option value="3">3 meses</option><option value="4" selected>4 meses</option><option value="5">5 meses</option><option value="6">6 meses</option><option value="8">8 meses</option><option value="12">12 meses</option></select></div>
+            <div class="fg"><label>Mês de início</label><select id="dp-mes-inicio"></select></div>
+            <div style="align-self:flex-end;"><button class="btn ba" onclick="gerarDesafioPoupanca()">Gerar desafio</button></div>
+          </div>
+          <div id="dp-stats" style="display:none;">
+            <div class="metrics" style="margin:.7rem 0 .5rem;" id="dp-metrics"></div>
+            <div style="margin-bottom:.5rem;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:4px;"><span>Progresso</span><span id="dp-pct">0%</span></div><div class="pbar"><div class="pfill" id="dp-pfill" style="width:0%;background:var(--accent);"></div></div></div>
+          </div>
+          <div id="dp-content" style="display:none;margin-top:.7rem;">
+            <div style="display:grid;grid-template-columns:1fr 220px;gap:1rem;align-items:start;">
+              <div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Semanas do desafio</div>
+                <div id="dp-semanas"></div>
+              </div>
+              <div style="background:var(--surface2);border-radius:var(--rlg);padding:1rem;position:sticky;top:12px;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Por mês</div>
+                <div id="dp-resumo-meses"></div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin:.9rem 0 .5rem;">Mapa de depósitos</div>
+                <div id="dp-mapa" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+                <div style="display:flex;gap:8px;margin-top:.5rem;font-size:10px;color:var(--t3);align-items:center;">
+                  <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--surface);border:1px solid var(--border);"></span>por fazer
+                  <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#E8C09A;border:1px solid #E8C09A;"></span>feito
+                  <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--accent);"></span>completo
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="card"><div class="ct">Criar desafio personalizado</div><div class="fr"><div class="fg" style="flex:2;"><label>Nome</label><input id="ch-nome" placeholder="ex: Sem compras supérfluas em maio"></div><div class="fg"><label>Meta (€)</label><input id="ch-meta" type="number" placeholder="0"></div></div><div class="fr"><div class="fg"><label>Duração (semanas)</label><input id="ch-dur" type="number" placeholder="4" min="1"></div><div class="fg"><label>Data início</label><input id="ch-ini" type="date"></div></div><div class="fr"><div class="fg"><label>Descrição</label><input id="ch-desc" placeholder="detalha o desafio..."></div><div style="align-self:flex-end;"><button class="btn ba" onclick="addDesafio()">+ Criar</button></div></div></div>
-      <div class="card" style="background:var(--surface2);border-style:dashed;"><div class="ct">Desafios sugeridos</div><div id="desafios-sugeridos"></div></div>
-      <div id="lst-desafios"></div>
+      <!-- PAINEL COFRE -->
+      <div id="painel-cofre" style="display:none;">
+        <div class="card" style="border-color:var(--accent);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">
+            <div class="ct" style="color:var(--accent);margin-bottom:0;">🏦 Cofre de Poupança</div>
+            <button class="btn bg bsm" onclick="fecharDesafio()">← Voltar</button>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Nome do cofre</label><input id="cofre-nome" placeholder="ex: Cofre férias, Cofre carro..."></div>
+            <div class="fg"><label>Meta (€)</label><input id="cofre-meta" type="number" placeholder="500" step="0.01"></div>
+            <div style="align-self:flex-end;"><button class="btn ba" onclick="criarCofre()">Criar cofre</button></div>
+          </div>
+          <div id="cofre-content"></div>
+        </div>
+      </div>
+
+      <!-- PAINEL DEPÓSITOS -->
+      <div id="painel-depositos" style="display:none;">
+        <div class="card" style="border-color:var(--accent);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">
+            <div class="ct" style="color:var(--accent);margin-bottom:0;">📅 Desafio X Depósitos</div>
+            <button class="btn bg bsm" onclick="fecharDesafio()">← Voltar</button>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Nº de depósitos</label><input id="dd-num" type="number" placeholder="ex: 30" min="1" value="30"></div>
+            <div class="fg"><label>Valor por depósito (€)</label><input id="dd-val" type="number" placeholder="ex: 20" min="1" step="0.01" value="20"></div>
+            <div style="align-self:flex-end;"><button class="btn ba" onclick="gerarDepositos()">Gerar desafio</button></div>
+          </div>
+          <div id="dd-content" style="display:none;">
+            <div class="metrics" style="margin:.7rem 0;" id="dd-metrics"></div>
+            <div style="margin-bottom:.9rem;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:4px;"><span>Progresso</span><span id="dd-pct">0%</span></div><div class="pbar"><div class="pfill" id="dd-pfill" style="width:0%;background:var(--accent);"></div></div></div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:.7rem;">Depósitos</div>
+            <div id="dd-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- MENTOR -->
