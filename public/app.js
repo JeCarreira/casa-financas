@@ -141,6 +141,7 @@ function go(page){
   else if(page==='objetivos')renderObjs();
   else if(page==='desafios'){renderDesafiosSugeridos();}
   else if(page==='desafios'){
+    renderDesafiosAtivosSection();
     try{
       var ativo=localStorage.getItem(LS_KEY+'_desafio_ativo');
       if(ativo){abrirDesafio(ativo);}else{fecharDesafio();}
@@ -527,6 +528,85 @@ function renderObjs(){var el=g('lst-objetivos');if(!el)return;if(!objetivos.leng
 var DS=[{nivel:'Iniciante',nome:'Registo diário 7 dias',desc:'Regista TODOS os gastos durante 7 dias.',meta:0,dur:1,passos:['Dia 1: Regista o primeiro gasto','Dia 2: Regista tudo incluindo cafés','Dia 3: Compara com o dia anterior','Dia 4: Tenta prever quanto vais gastar','Dia 5: Identifica onde gastas mais','Dia 6: Reduz esse gasto em 20%','Dia 7: Balanço da semana']},{nivel:'Iniciante',nome:'Semana sem compras impulsivas',desc:'7 dias sem comprar nada fora da lista.',meta:0,dur:1,passos:['Faz a lista antes de sair','Compra só o que está na lista','Anota o que quiseste comprar mas não compraste','Soma o que poupaste']},{nivel:'Iniciante',nome:'Poupar 50€ este mês',desc:'O primeiro passo para o hábito de poupar.',meta:50,dur:4,passos:['Semana 1: Identifica onde cortar 12,50€','Semana 2: Transfere 12,50€','Semana 3: Repete','Semana 4: Completa os 50€!']},{nivel:'Intermédio',nome:'30 dias sem compras supérfluas',desc:'Um mês sem roupa, gadgets ou decoração.',meta:0,dur:4,passos:['Semana 1: Define por escrito o que é supérfluo','Semana 2: Quando quiseres comprar algo, espera 48h','Semana 3: Substitui shopping por actividades gratuitas','Semana 4: Soma o que poupaste']},{nivel:'Intermédio',nome:'Reserva de emergência 500€',desc:'500€ intocáveis.',meta:500,dur:8,passos:['Semana 1-2: Identifica onde cortar','Semana 3-4: Poupa os primeiros 125€','Semana 5-6: Mais 125€','Semana 7-8: Conclui os 500€']},{nivel:'Avançado',nome:'Desafio 52 semanas',desc:'Semana 1: 1€. Semana 52: 52€. Total: 1.378€.',meta:1378,dur:52,passos:['Semanas 1-10: 1€ a 10€/sem.','Semanas 11-20: 11€ a 20€/sem.','Semanas 21-30: 21€ a 30€/sem.','Semanas 31-40: 31€ a 40€/sem.','Semanas 41-52: 41€ a 52€/sem.']},{nivel:'Avançado',nome:'Organiza as finanças do zero',desc:'Plano completo em 4 semanas.',meta:0,dur:4,passos:['Semana 1: Lista rendimentos, despesas e dívidas.','Semana 2: Cria orçamento 50/30/20.','Semana 3: Conta poupança + transferência automática.','Semana 4: Define 3 objetivos com valores e prazos.']}];
 
 
+
+// ===== DESAFIO ATIVO NO DASHBOARD E DESAFIOS =====
+function getDesafioAtivoInfo(){
+  try{
+    var tipo=localStorage.getItem(LS_KEY+'_desafio_ativo');
+    if(!tipo)return null;
+    var cfg=localStorage.getItem(LS_KEY+'_dp_config');
+    if(tipo==='poupanca'&&cfg){
+      var c=JSON.parse(cfg);
+      var checksKey=LS_KEY+'_dp_'+c.meta+'_'+c.nMeses+'_'+c.mesInicio;
+      var checks={};
+      try{var sc=localStorage.getItem(checksKey);if(sc)checks=JSON.parse(sc);}catch(e){}
+      // Recalc semanas
+      var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      var semanas=[],ano=parseInt(c.mesInicio.slice(0,4)),mes=parseInt(c.mesInicio.slice(5,7))-1,idx=1;
+      for(var m=0;m<c.nMeses;m++){var diasMes=new Date(ano,mes+m+1,0).getDate(),semsN=Math.ceil(diasMes/7);for(var s=0;s<semsN;s++){var df=Math.min((s+1)*7,diasMes)-s*7;semanas.push({id:'S'+idx,diasSemana:df,valor:0});idx++;}}
+      var totalDias=semanas.reduce(function(s,w){return s+w.diasSemana;},0);
+      var vd=c.meta/totalDias;semanas.forEach(function(s){s.valor=Math.round(s.diasSemana*vd);});
+      var feitas=semanas.filter(function(s){return checks[s.id];}).length;
+      var poupado=semanas.filter(function(s){return checks[s.id];}).reduce(function(acc,s){return acc+s.valor;},0);
+      var pct=c.meta>0?Math.round((poupado/c.meta)*100):0;
+      return{tipo:'poupanca',icone:'🎯',nome:'Desafio Poupança',meta:c.meta,poupado:poupado,pct:pct,feitas:feitas,total:semanas.length};
+    }
+    if(tipo==='cofre'){
+      loadCofre();
+      if(!COFRE_DATA.nome)return null;
+      var total=(COFRE_DATA.depositos||[]).reduce(function(s,d){return s+d.val;},0);
+      var pct2=COFRE_DATA.meta>0?Math.min(Math.round((total/COFRE_DATA.meta)*100),100):0;
+      return{tipo:'cofre',icone:'🏦',nome:'Cofre: '+COFRE_DATA.nome,meta:COFRE_DATA.meta,poupado:total,pct:pct2,feitas:(COFRE_DATA.depositos||[]).length,total:null};
+    }
+    if(tipo==='depositos'){
+      var num=parseInt(localStorage.getItem(LS_KEY+'_dd_num'))||30;
+      var val=parseFloat(localStorage.getItem(LS_KEY+'_dd_val'))||20;
+      var checksD={};
+      try{var scd=localStorage.getItem(LS_KEY+'_dd_'+num+'_'+val);if(scd)checksD=JSON.parse(scd);}catch(e){}
+      var feitas2=Object.values(checksD).filter(Boolean).length;
+      var poupado2=feitas2*val,pct3=Math.round((feitas2/num)*100);
+      return{tipo:'depositos',icone:'📅',nome:'Desafio '+num+' Depósitos',meta:num*val,poupado:poupado2,pct:pct3,feitas:feitas2,total:num};
+    }
+  }catch(e){}
+  return null;
+}
+
+function renderDesafioAtivoResumo(){
+  var el=g('r-desafio-ativo');if(!el)return;
+  var info=getDesafioAtivoInfo();
+  if(!info){el.innerHTML='';return;}
+  el.innerHTML='<div class="card" style="border-color:var(--accent);">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">'
+    +'<div class="ct" style="color:var(--accent);margin-bottom:0;">'+info.icone+' '+info.nome+'</div>'
+    +'<button class="btn bg bsm" onclick="go(\'desafios\')">Ver detalhes →</button>'
+    +'</div>'
+    +'<div class="metrics" style="margin-bottom:.6rem;">'
+    +'<div class="metric"><div class="ml">Meta</div><div class="mv" style="font-size:16px;">'+fmt(info.meta)+'</div></div>'
+    +'<div class="metric"><div class="ml">Poupado</div><div class="mv" style="font-size:16px;color:var(--accent);">'+fmt(info.poupado)+'</div></div>'
+    +'<div class="metric"><div class="ml">Progresso</div><div class="mv" style="font-size:16px;color:var(--green);">'+info.pct+'%</div></div>'
+    +(info.total?'<div class="metric"><div class="ml">Feitas</div><div class="mv" style="font-size:16px;">'+info.feitas+' / '+info.total+'</div></div>':'')
+    +'</div>'
+    +'<div style="margin-bottom:3px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:4px;"><span>Progresso</span><span>'+info.pct+'%</span></div>'
+    +'<div class="pbar"><div class="pfill" style="width:'+info.pct+'%;background:var(--accent);"></div></div></div>'
+    +'</div>';
+}
+
+function renderDesafiosAtivosSection(){
+  var el=g('desafios-ativos-section');if(!el)return;
+  var info=getDesafioAtivoInfo();
+  if(!info){el.innerHTML='';return;}
+  el.innerHTML='<div class="card" style="border-color:var(--accent);margin-bottom:.9rem;">'
+    +'<div class="ct" style="color:var(--accent);">Desafio ativo</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">'
+    +'<div><div style="font-size:15px;font-weight:600;">'+info.icone+' '+info.nome+'</div>'
+    +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">'+fmt(info.poupado)+' poupados de '+fmt(info.meta)+' · '+info.pct+'% concluído'+(info.total?' · '+info.feitas+'/'+info.total+' feitos':'')+'</div>'
+    +'</div>'
+    +'<button class="btn ba bsm" data-tipo="'+info.tipo+'" onclick="abrirDesafio(this.getAttribute(\'data-tipo\'))">Continuar →</button>'
+    +'</div>'
+    +'<div style="margin-top:.7rem;"><div class="pbar"><div class="pfill" style="width:'+info.pct+'%;background:var(--accent);"></div></div></div>'
+    +'</div>';
+}
+
 // ===== DESAFIOS - NAVEGAÇÃO =====
 function abrirDesafio(tipo){
   document.getElementById('painel-poupanca').style.display='none';
@@ -897,6 +977,7 @@ function renderResumo(){
   var oH=objetivos.length?objetivos.map(function(obj){var pct=obj.meta>0?Math.min(Math.round(((obj.atual||0)/obj.meta)*100),100):0;return'<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><span>'+obj.nome+'</span><span class="pill '+(pct>=100?'pg':pct>=50?'pb':'pa')+'">'+pct+'%</span></div><div class="pbar"><div class="pfill" style="width:'+pct+'%;background:'+(pct>=100?'var(--green)':pct>=50?'#1A3F6F':'var(--accent)')+';"></div></div><div style="font-size:12px;color:var(--t3);margin-top:2px;">'+fmt(obj.atual||0)+' de '+fmt(obj.meta)+(obj.prazo?' · '+obj.prazo:'')+'</div></div>';}).join(''):'<div style="font-size:13px;color:var(--t3);">Sem objetivos.</div>';if(g('r-objs'))g('r-objs').innerHTML=oH;
   var ci3=cycleInfo(),mg3=saldo>=200&&ci3.daysLeft>10?Math.max(saldo-200,0)*0.3:0,pend=desejos.filter(function(d){return!d.comprado;}),wH='';if(!pend.length)wH='<div style="font-size:13px;color:var(--t3);">Sem itens.</div>';else if(mg3<=0)wH='<div class="alert ala">Faltam '+ci3.daysLeft+' dias e saldo é '+fmt(saldo)+'. Adia as compras.</div>';else{var order3={alta:0,media:1,baixa:2},m3=[...pend].sort(function(a,b){return order3[a.prio]-order3[b.prio];}).find(function(w){return w.preco<=mg3;});wH=m3?'<div class="alert alg">Com margem de '+fmt(mg3)+' podes considerar: <strong>'+m3.nome+'</strong> ('+fmt(m3.preco)+').</div>':'<div class="alert ala">Nenhum item cabe na margem segura ('+fmt(mg3)+').</div>';}if(g('r-wishes'))g('r-wishes').innerHTML=wH;
   renderNotas();
+  renderDesafioAtivoResumo();
 }
 
 
